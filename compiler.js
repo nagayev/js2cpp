@@ -1,14 +1,9 @@
 const fs = require('fs');
-//const {ConstantCalculate} = require("ast");
 
 const {parse} = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 const generator = require("@babel/generator").default;
 
-//const standartImports = ['<iostream>'];
-
-//jscode = "console.log(123)";
-//process.argv [pathToNode,pathToScript,usefullData...] 
 if (process.argv.length!=3){
     console.error("Invalid script usage!");
     console.log("Usage: node compiler.js path_to_your_source.js");
@@ -53,14 +48,11 @@ class CPPGenerator{
         let prolog = '//Auto generated code using js-compiler\n';
         const epilog = 'return 0;\n}';
         for(module of this._modules){
-          /*if (standartImports.includes(module)) prolog+=`#include <${module}>\n`;
-          else prolog+=`#include "${module}.h" //JS runtime module\n`; //FIXME:  */
           prolog+=`#include ${module}\n`;
         } 
         prolog+="using namespace std;\n";
         prolog+="int main(){\n";
         this._cpp = prolog + this._cpp + epilog;
-        //console.log(this._cpp);
         fs.writeFileSync('js_result.cpp',this._cpp);
     }
     
@@ -154,30 +146,16 @@ function parse_node(node){ //addLineEnding = true
         case 'ExpressionStatement':
             const expr = node.expression;
             if (expr.type == 'CallExpression'){
-                //вызываем какую-то функцию
-                //func:
                 if (expr.callee.type=='MemberExpression'){
-                    //method of object
+                    //method of an object
                     //const object = expr.callee.object;
                     const module_name = expr.callee.object.name; //f.g console
                     const function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
                     cpp_generator.addImport(`"${module_name}/${function_name}.h"`); //#include "console/log.h"
                 }
-                //args:
-                //let code =  '';
                 
                 for (argument of expr.arguments){
-                    /*if (argument.type.includes('Literal')){
-                        //Simple type (String, Numbers)
-                        code+=`${argument.value},`;
-                    }
-                    else if (argument.type=="Identifier"){
-                        code+=`${argument.name},`;
-                    }
-                    else {
-                        throw new Error('We don\'t support this '+argument.type);
-                    }*/
                     parse_node(argument);
                     cpp_generator.addRaw(', ');
                 }
@@ -193,7 +171,7 @@ function parse_node(node){ //addLineEnding = true
             cpp_generator.addRaw('if (');
             parse_node(node.test); //condition
             cpp_generator.addRaw(') {\n')
-            parse_node(node.consequent); //do something
+            parse_node(node.consequent); //if's body
             cpp_generator.addRaw('}\n')
             if (alternate!=null){
                cpp_generator.addRaw('else {\n');
@@ -205,7 +183,6 @@ function parse_node(node){ //addLineEnding = true
             //init,test,update,body
             cpp_generator.addRaw('for (');
             parse_node(node.init);
-            //cpp_generator.addRaw(';');
             parse_node(node.test);
             cpp_generator.addRaw(';');
             parse_node(node.update);
