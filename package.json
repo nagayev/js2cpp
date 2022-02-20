@@ -1,14 +1,14 @@
 {
-  "name": "ast",
-  "version": "1.0.0",
+  "name": "js2cpp",
+  "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "js2cpp.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Marat Nagayev",
+  "license": "MIT",
   "dependencies": {
     "ast": "^1.0.7"
   }

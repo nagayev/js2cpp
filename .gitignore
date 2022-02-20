@@ -1,4 +1,5 @@
 node_modules/
 js_result.cpp
+test.js
 # Binary
 js_bin
