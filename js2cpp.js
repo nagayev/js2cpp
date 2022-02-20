@@ -1,4 +1,5 @@
 const fs = require('fs');
+const assert = require('assert');
 
 const {parse} = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
@@ -8,10 +9,10 @@ if (process.argv.length!=3){
     console.error("Invalid script usage!");
     console.log("Usage: node compiler.js path_to_your_source.js");
     process.exit(1);
-} 
+}
+let jscode,ast;
 jscode = fs.readFileSync(process.argv[2]).toString('utf-8');
 
-let ast;
 
 try{
     ast = parse(jscode);
@@ -62,12 +63,24 @@ const cpp_generator = new CPPGenerator(jscode);
 
 function getType(node){
     let ctype; 
-    let js_type = node.declarations[0].init.type;
+    let js_type;
+    try{
+        js_type = node.declarations[0].init.type;
+    }
+    catch{
+        js_type = node.type;
+    }
     switch (js_type){
         case 'UnaryExpression':
         case 'NumericLiteral':
             ctype="int64_t";
-            let value = node.declarations[0].init.value;
+            let value;
+            try{
+                value = node.declarations[0].init.value;
+            }
+            catch{
+               value = node.value; 
+            }
             if (value===undefined && node.declarations[0].init.operator){
                 value = node.declarations[0].init.argument.value;
                 /*console.log(value);
@@ -79,9 +92,15 @@ function getType(node){
             ctype="string";
             break;
         case 'ArrayExpression':
-            throw new Error('Unsopperted type: array!');
-            ctype = "vector<int64_t>";
+            const first_element = node.declarations[0].init.elements[0];
+            const first_type = first_element.type;
+            const isEqual = (element) => {
+                return element.type == first_type; 
+            }
+            assert(node.declarations[0].init.elements.every(isEqual),'array\'s elements must be not heterogeneous');
+            ctype = `vector<${getType(first_element)}>`;
             cpp_generator.addImport('<vector>');
+            break;
         case 'ObjectExpression':
             throw new Error('Unsopperted type: object!');
             ctype = "map<int64_t>";
@@ -113,8 +132,19 @@ function parse_node(node){ //addLineEnding = true
             parse_node(node.right);
             break;
         case 'VariableDeclaration':
+            //FIXME: hacky code
             type = getType(node);
+            let code = '';
             if (type=="string") code = `${type} ${node.declarations[0].id.name} = "${node.declarations[0].init.value}"`;
+            else if (type.includes("vector")){
+                const elements = node.declarations[0].init.elements;
+                cpp_generator.addRaw(`${type} ${node.declarations[0].id.name} = {`);
+                for (element of elements) {
+                    parse_node(element); //TODO: maybe we need ret code's mode
+                    cpp_generator.addRaw(',');
+                }
+                cpp_generator.addCode('}');
+            }
             else{
                 let value = node.declarations[0].init.value;
                 if (value===undefined){
@@ -125,7 +155,7 @@ function parse_node(node){ //addLineEnding = true
                 }
                 code = `${type} ${node.declarations[0].id.name} = ${value}`;
             }
-            cpp_generator.addCode(code);
+            if (code!='') cpp_generator.addCode(code);
             break;
         case 'Identifier':
             cpp_generator.addRaw(node.name);
@@ -173,7 +203,7 @@ function parse_node(node){ //addLineEnding = true
             cpp_generator.addRaw(') {\n')
             parse_node(node.consequent); //if's body
             cpp_generator.addRaw('}\n')
-            if (alternate!=null){
+            if (node.alternate!=null){
                cpp_generator.addRaw('else {\n');
                parse_node(node.alternate); //parsing else 
                cpp_generator.addRaw('}\n');
