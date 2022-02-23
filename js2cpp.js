@@ -296,6 +296,9 @@ function parse_node(node){ //options=defaultOptions
             parse_node(node.body);
             cpp_generator.addRaw('}\n');
             break;
+        case 'ReturnStatement':
+            throw new Error('We haven\'t support returning value yet');
+            break;
         default:
             console.log(node);
             throw new Error(`Invalid AST type ${node.type}`);
