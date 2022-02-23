@@ -2,12 +2,12 @@ const fs = require('fs');
 const assert = require('assert');
 
 const {parse} = require("@babel/parser");
-const traverse = require("@babel/traverse").default;
-const generator = require("@babel/generator").default;
+//const traverse = require("@babel/traverse").default;
+//const generator = require("@babel/generator").default;
 
 if (process.argv.length!=3){
     console.error("Invalid script usage!");
-    console.log("Usage: node compiler.js path_to_your_source.js");
+    console.log("Usage: node js2cpp.js path_to_your_source.js");
     process.exit(1);
 }
 let jscode,ast;
@@ -72,7 +72,7 @@ class CPPGenerator{
     
     save(){
         //add prolog
-        let prolog = '//Auto generated code using js-compiler\n';
+        let prolog = '//Auto generated code using js2cpp\n';
         const epilog = 'return 0;\n}';
         for(module of this._modules){
           prolog+=`#include ${module}\n`;
