@@ -151,6 +151,10 @@ function parse_node(node){ //addLineEnding = true
                     parse_node(element); //TODO: maybe we need ret code's mode
                     cpp_generator.addRaw(',');
                 }
+                if (elements.length!==0){
+                    //delete traling ,
+                    cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+                }
                 cpp_generator.addCode('}');
             }
             else{
@@ -197,7 +201,10 @@ function parse_node(node){ //addLineEnding = true
                     parse_node(argument);
                     cpp_generator.addRaw(', ');
                 }
+                if (expr.arguments.length!==0){
+                    //delete traling ,
                 cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
+                }
                 cpp_generator.addCode(')'); //replace last , with )
             }
             else {
@@ -210,7 +217,7 @@ function parse_node(node){ //addLineEnding = true
             parse_node(node.test); //condition
             cpp_generator.addRaw(') {\n')
             parse_node(node.consequent); //if's body
-            cpp_generator.addRaw('}\n')
+            cpp_generator.addRaw('}\n');
             if (node.alternate!=null){
                cpp_generator.addRaw('else {\n');
                parse_node(node.alternate); //parsing else 
