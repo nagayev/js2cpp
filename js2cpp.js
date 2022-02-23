@@ -170,6 +170,23 @@ function parse_node(node){ //addLineEnding = true
             }
             if (code!='') cpp_generator.addCode(code);
             break;
+        case 'FunctionDeclaration':
+            assert(!node.async,'We don\'t support async functions');
+            assert(!node.generator,'We don\'t support generators');
+            cpp_generator.addRaw(`auto ${node.id.name}=[](`);
+            if (node.params.length!==0){
+                console.log(node.params);
+                throw new Error('We don\'t support functions with params');
+            }
+            /*for (param of node.params){
+                cpp_generator.addRaw('vector<int64_t> '); //TODO: get type from typescript
+                parse_node(param);
+                cpp_generator.addRaw(',');
+            }*/
+            cpp_generator.addRaw('){\n');
+            parse_node(node.body);
+            cpp_generator.addCode(`}`);
+            break;
         case 'Identifier':
             cpp_generator.addRaw(node.name);
             break;
@@ -198,6 +215,11 @@ function parse_node(node){ //addLineEnding = true
                     const function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
                     cpp_generator.addImport(`"${module_name}/${function_name}.h"`); //#include "console/log.h"
+                }
+                //handle something like test(1);
+                else if (expr.callee.type=='Identifier'){
+                    const function_name = expr.callee.name;
+                    cpp_generator.addRaw(`${function_name}(`);
                 }
                 
                 for (argument of expr.arguments){
