@@ -135,6 +135,7 @@ function parse_node(node){ //addLineEnding = true
             cpp_generator.addRaw(`"${node.value}"`);
             break;
         case 'BinaryExpression':
+            //something like a>5 or 1!=2
             parse_node(node.left);
             cpp_generator.addRaw(node.operator);
             parse_node(node.right);
@@ -173,6 +174,7 @@ function parse_node(node){ //addLineEnding = true
             cpp_generator.addRaw(node.name);
             break;
         case 'UpdateExpression':
+            //something like i++
             if (node.prefix) {
                 cpp_generator.addRaw(`${node.operator}${node.argument.name}`); //++i
             }
@@ -188,6 +190,7 @@ function parse_node(node){ //addLineEnding = true
         case 'ExpressionStatement':
             const expr = node.expression;
             if (expr.type == 'CallExpression'){
+                //handle something like Math.cos(0);
                 if (expr.callee.type=='MemberExpression'){
                     //method of an object
                     //const object = expr.callee.object;
@@ -250,6 +253,7 @@ function main_parse(){
 
 function main(){
     main_parse();
+    console.log('Compiled successfully!\nSee js_result.cpp');
     cpp_generator.save();
 }
 main();
