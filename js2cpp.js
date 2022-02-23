@@ -93,6 +93,10 @@ function getType(node){
             break;
         case 'ArrayExpression':
             const first_element = node.declarations[0].init.elements[0];
+            if (first_element===undefined){
+                //empty array
+                throw new Error('You coudn\'t declare empty array: we don\'t know it\'s type');
+            }
             const first_type = first_element.type;
             const isEqual = (element) => {
                 return element.type == first_type; 
@@ -107,11 +111,15 @@ function getType(node){
             //cpp_generator.addImport('<vector>');
             break;
         case 'CallExpression':
-            console.log(node);
+            //console.log(node);
             throw new Error('We coudn\'t understood function\'s returning type');
             break;
+        case 'MemberExpression':
+            const err = 'We coudn\'t understood type\n';
+            //throw new Error(err+'Probably you are trying to do something like: let c=arr[i+1]');
+            ctype = "int64_t";
+            break;
         default:
-            //console.log(node.declarations[0].init);
             throw new Error('Unknown type '+js_type);
     }
     return ctype;
