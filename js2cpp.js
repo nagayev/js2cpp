@@ -25,6 +25,16 @@ catch(e){
 
 const nodes = ast.program.body;
 
+function JS_assert(value,message){
+    try{
+        assert(value,message);
+    }
+    catch(e){
+        throw new Error(message);
+    }
+}
+
+
 class CPPGenerator{
     
     constructor(){
@@ -101,13 +111,13 @@ function getType(node){
             const isEqual = (element) => {
                 return element.type == first_type; 
             }
-            assert(node.declarations[0].init.elements.every(isEqual),'array\'s elements must be not heterogeneous');
+            JS_assert(node.declarations[0].init.elements.every(isEqual),'array\'s elements must be not heterogeneous');
             ctype = `vector<${getType(first_element)}>`;
             cpp_generator.addImport('<vector>');
             break;
         case 'ObjectExpression':
             throw new Error('Unsopperted type: object!');
-            ctype = "map<int64_t>";
+            //ctype = "map<int64_t>";
             //cpp_generator.addImport('<vector>');
             break;
         case 'CallExpression':
@@ -116,11 +126,11 @@ function getType(node){
             break;
         case 'MemberExpression':
             const err = 'We coudn\'t understood type\n';
-            //throw new Error(err+'Probably you are trying to do something like: let c=arr[i+1]');
-            ctype = "int64_t";
+            throw new Error(err+'Probably you are trying to do something like: let c=arr[i+1]');
+            //ctype = "int64_t";
             break;
         default:
-            throw new Error('Unknown type '+js_type);
+            throw new Error(`Unknown type ${js_type}`);
     }
     return ctype;
 }
@@ -171,8 +181,8 @@ function parse_node(node){ //addLineEnding = true
             if (code!='') cpp_generator.addCode(code);
             break;
         case 'FunctionDeclaration':
-            assert(!node.async,'We don\'t support async functions');
-            assert(!node.generator,'We don\'t support generators');
+            JS_assert(!node.async,'We don\'t support async functions');
+            JS_assert(!node.generator,'We don\'t support generators');
             cpp_generator.addRaw(`auto ${node.id.name}=[](`);
             if (node.params.length!==0){
                 console.log(node.params);
