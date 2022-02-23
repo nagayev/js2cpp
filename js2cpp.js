@@ -35,6 +35,7 @@ function JS_assert(value,message){
 }
 
 
+const defaultOptions = {level:1}; //NOTE: level is applyed to all nodes!
 class CPPGenerator{
     
     constructor(){
@@ -42,12 +43,27 @@ class CPPGenerator{
         this._modules = new Set(['<iostream>']);
     }
     
+    _getSpacesByLevel(level){
+        ////3 spaces for level 2, 6 for level 3
+        return ' '.repeat(3*(level-1));
+    }
+    
     addCode(code){
-        this._cpp += `${code};\n`;
+        const options = globalThis.options||defaultOptions;
+        if (globalThis.options!==defaultOptions){
+            globalThis.options=defaultOptions;
+        }
+        const spaces = this._getSpacesByLevel(options.level);
+        this._cpp += `${spaces}${code};\n`;
     }
     
     addRaw(code){
-        this._cpp += code;
+        const options = globalThis.options||defaultOptions;
+        if (globalThis.options!==defaultOptions){
+            globalThis.options=defaultOptions;
+        }
+        const spaces = this._getSpacesByLevel(options.level);
+        this._cpp += `${spaces}${code}`;
     }
     
     addImport(module){
@@ -136,7 +152,10 @@ function getType(node){
 }
 
 //TODO: move parsing to several modules
-function parse_node(node){ //addLineEnding = true
+function parse_node(node){ //options=defaultOptions
+    /*if(options!==defaultOptions){
+        globalThis.options=options;
+    }*/
     switch(node.type){
         case 'NumericLiteral':
             cpp_generator.addRaw(`${node.value}`);
@@ -194,6 +213,7 @@ function parse_node(node){ //addLineEnding = true
                 cpp_generator.addRaw(',');
             }*/
             cpp_generator.addRaw('){\n');
+            globalThis.options={level:2};
             parse_node(node.body);
             cpp_generator.addCode(`}`);
             break;
@@ -210,8 +230,11 @@ function parse_node(node){ //addLineEnding = true
             }
             break;
         case 'BlockStatement':
+            soptions = globalThis.options;
             for (subnode of node.body){
                 parse_node(subnode);
+                globalThis.options=soptions; //restore options
+                //this is used to add spaces into function's body
             }
             break;
         case 'ExpressionStatement':
@@ -263,10 +286,13 @@ function parse_node(node){ //addLineEnding = true
             //init,test,update,body
             cpp_generator.addRaw('for (');
             parse_node(node.init);
+            //FIXME: hack for delete last \n
+            cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
             parse_node(node.test);
             cpp_generator.addRaw(';');
             parse_node(node.update);
             cpp_generator.addRaw('){\n');
+            globalThis.options={level:2};
             parse_node(node.body);
             cpp_generator.addRaw('}\n');
             break;
