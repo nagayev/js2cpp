@@ -265,6 +265,22 @@ function parse_node(node){ //options=defaultOptions
                 }
                 cpp_generator.addCode(')'); //replace last , with )
             }
+            else if (expr.type=='AssignmentExpression'){
+                const twoVariables = expr.left.type=='Identifier' && expr.right.type=='Identifier';
+                //TODO: add type assert
+                if (twoVariables) {
+                    //something like a = b, not a = 5
+                    console.warn(`We coudn\'t check typeof ${expr.right.name}`);
+                    cpp_generator.addCode(`${expr.left.name}=${expr.right.name}`)
+                }
+                else if (expr.right.type!=='Identifier'){
+                    //something like a = 5;
+                    console.warn(`We coudn\'t check typeof ${expr.left.name}`);
+                    cpp_generator.addRaw(`${expr.left.name} = `);
+                    parse_node(expr.right);
+                    cpp_generator.addRaw(';\n');
+                }
+            }
             else {
               console.log(node);
               throw new Error(`Invalid ExpressionStatement`);  
