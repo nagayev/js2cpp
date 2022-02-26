@@ -88,24 +88,12 @@ const cpp_generator = new CPPGenerator(jscode);
 
 function getType(node){
     let ctype; 
-    let js_type;
-    try{
-        js_type = node.declarations[0].init.type;
-    }
-    catch{
-        js_type = node.type;
-    }
+    let js_type = node.type;
     switch (js_type){
         case 'UnaryExpression':
         case 'NumericLiteral':
             ctype="int64_t";
-            let value;
-            try{
-                value = node.declarations[0].init.value;
-            }
-            catch{
-               value = node.value; 
-            }
+            const value = node.value;
             if (value===undefined && node.declarations[0].init.operator){
                 value = node.declarations[0].init.argument.value;
                 /*console.log(value);
@@ -117,13 +105,7 @@ function getType(node){
             ctype="string";
             break;
         case 'ArrayExpression':
-            let elements;
-            if (node.declarations){
-                elements = node.declarations[0].init.elements;
-            }
-            else {
-                elements = node.elements;
-            }
+            const elements = node.elements;
             const first_element = elements[0]; 
             if (first_element===undefined){
                 //empty array
@@ -192,7 +174,7 @@ function parse_node(node){ //options=defaultOptions
         case 'VariableDeclaration':
             //FIXME: hacky code
             const variable = node.declarations[0].id.name;
-            type = getType(node);
+            type = getType(node.declarations[0].init);
             cpp_generator.types[variable]=type;
             let code = '';
             if (type=="string") code = `${type} ${variable} = "${node.declarations[0].init.value}"`;
@@ -264,27 +246,31 @@ function parse_node(node){ //options=defaultOptions
             const expr = node.expression;
             if (expr.type == 'CallExpression'){
                 //handle something like Math.cos(0);
+                let function_name;
                 if (expr.callee.type=='MemberExpression'){
                     //method of an object
                     //const object = expr.callee.object;
                     const module_name = expr.callee.object.name; //f.g console
-                    const function_name = expr.callee.property.name; //f.g log
+                    function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
                     cpp_generator.addImport(`"${module_name}/${function_name}.h"`); //#include "console/log.h"
                 }
                 //handle something like test(1);
                 else if (expr.callee.type=='Identifier'){
-                    const function_name = expr.callee.name;
+                    function_name = expr.callee.name;
                     cpp_generator.addRaw(`${function_name}(`);
                 }
-                
+                //FIXME: commented code below doesn't work with std functions like console.log
+                /*if (cpp_generator.functions[function_name]!=expr.arguments.length){
+                    throw new TypeError(`Incorrect number of arguments passed to ${function_name}`);
+                }*/
                 for (argument of expr.arguments){
                     parse_node(argument);
                     cpp_generator.addRaw(', ');
                 }
                 if (expr.arguments.length!==0){
                     //delete traling ,
-                cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
+                    cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
                 }
                 cpp_generator.addCode(')');
             }
@@ -335,9 +321,14 @@ function parse_node(node){ //options=defaultOptions
         case 'ForStatement':
             //init,test,update,body
             cpp_generator.addRaw('for (');
-            parse_node(node.init);
-            //FIXME: hack for delete last \n
-            cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+            if (node.init!==null){
+                parse_node(node.init);
+                //FIXME: hack for delete last \n
+                cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+            }
+            else {
+                cpp_generator.addRaw(';');
+            }
             parse_node(node.test);
             cpp_generator.addRaw(';');
             parse_node(node.update);
