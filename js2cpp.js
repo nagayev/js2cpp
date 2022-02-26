@@ -39,8 +39,9 @@ const defaultOptions = {level:1}; //NOTE: level is applyed to all nodes!
 class CPPGenerator{
     
     constructor(){
-        this._cpp = "";
-        this._modules = new Set(['<iostream>']);
+        this._cpp = ""; //cpp code
+        this.types = {}; //types of js variables
+        this._modules = new Set(['<iostream>']); //cpp includes
     }
     
     _getSpacesByLevel(level){
@@ -118,7 +119,14 @@ function getType(node){
             ctype="string";
             break;
         case 'ArrayExpression':
-            const first_element = node.declarations[0].init.elements[0];
+            let elements;
+            if (node.declarations){
+                elements = node.declarations[0].init.elements;
+            }
+            else {
+                elements = node.elements;
+            }
+            const first_element = elements[0]; 
             if (first_element===undefined){
                 //empty array
                 throw new Error('You coudn\'t declare empty array: we don\'t know it\'s type');
@@ -127,7 +135,7 @@ function getType(node){
             const isEqual = (element) => {
                 return element.type == first_type; 
             }
-            JS_assert(node.declarations[0].init.elements.every(isEqual),'array\'s elements must be not heterogeneous');
+            JS_assert(elements.every(isEqual),'array\'s elements must be not heterogeneous');
             ctype = `vector<${getType(first_element)}>`;
             cpp_generator.addImport('<vector>');
             break;
@@ -163,6 +171,20 @@ function parse_node(node){ //options=defaultOptions
         case 'StringLiteral':
             cpp_generator.addRaw(`"${node.value}"`);
             break;
+        case 'ArrayExpression':
+           console.log(node);
+            const elements = node.elements;
+            cpp_generator.addRaw(`{`);
+            for (element of elements) {
+                parse_node(element); //TODO: maybe we need ret code's mode
+                cpp_generator.addRaw(',');
+            }
+            if (elements.length!==0){
+                //delete traling ,
+                cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+            }
+            cpp_generator.addCode('}');
+            break;
         case 'BinaryExpression':
             //something like a>5 or 1!=2
             parse_node(node.left);
@@ -171,9 +193,11 @@ function parse_node(node){ //options=defaultOptions
             break;
         case 'VariableDeclaration':
             //FIXME: hacky code
+            const variable = node.declarations[0].id.name;
             type = getType(node);
+            cpp_generator.types[variable]=type;
             let code = '';
-            if (type=="string") code = `${type} ${node.declarations[0].id.name} = "${node.declarations[0].init.value}"`;
+            if (type=="string") code = `${type} ${variable} = "${node.declarations[0].init.value}"`;
             else if (type.includes("vector")){
                 const elements = node.declarations[0].init.elements;
                 cpp_generator.addRaw(`${type} ${node.declarations[0].id.name} = {`);
@@ -266,20 +290,32 @@ function parse_node(node){ //options=defaultOptions
                 cpp_generator.addCode(')'); //replace last , with )
             }
             else if (expr.type=='AssignmentExpression'){
-                const twoVariables = expr.left.type=='Identifier' && expr.right.type=='Identifier';
-                //TODO: add type assert
-                if (twoVariables) {
-                    //something like a = b, not a = 5
-                    console.warn(`We coudn\'t check typeof ${expr.right.name}`);
-                    cpp_generator.addCode(`${expr.left.name}=${expr.right.name}`)
-                }
-                else if (expr.right.type!=='Identifier'){
+                const oneVariable = expr.left.type==='Identifier' && expr.right.type!=='Identifier';
+                const variable = expr.left.name;
+                let leftType = cpp_generator.types[variable];
+                let rightType;
+                if(oneVariable){
                     //something like a = 5;
+                    rightType = getType(expr.right);
+                    if (leftType!==rightType){
+                        throw new TypeError(`Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`);
+                    }
                     console.warn(`We coudn\'t check typeof ${expr.left.name}`);
                     cpp_generator.addRaw(`${expr.left.name} = `);
                     parse_node(expr.right);
                     cpp_generator.addRaw(';\n');
                 }
+                else{
+                    //something like a = b, not a = 5
+                    const anotherVariable = expr.right.name;
+                    rightType = cpp_generator.types[anotherVariable];
+                    if (leftType!=rightType){
+                        //TODO: use node.loc
+                        throw new TypeError(`Variable ${variable} has type ${leftType}, not ${rightType}`);
+                    }
+                    cpp_generator.addCode(`${variable} = ${expr.right.name}`)
+                }
+                   
             }
             else {
               console.log(node);
