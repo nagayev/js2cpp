@@ -2,8 +2,6 @@ const fs = require('fs');
 const assert = require('assert');
 
 const {parse} = require("@babel/parser");
-//const traverse = require("@babel/traverse").default;
-//const generator = require("@babel/generator").default;
 
 if (process.argv.length!=3){
     console.error("Invalid script usage!");
@@ -43,7 +41,7 @@ class CPPGenerator{
         this.types = {}; //types of js variables
         this._modules = new Set(['<iostream>']); //cpp includes
     }
-    
+
     _getSpacesByLevel(level){
         ////3 spaces for level 2, 6 for level 3
         return ' '.repeat(3*(level-1));
@@ -154,7 +152,7 @@ function getType(node){
             //ctype = "int64_t";
             break;
         default:
-            throw new Error(`Unknown type ${js_type}`);
+            throw new TypeError(`Unknown type ${js_type}`);
     }
     return ctype;
 }
@@ -183,7 +181,7 @@ function parse_node(node){ //options=defaultOptions
                 //delete traling ,
                 cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
             }
-            cpp_generator.addCode('}');
+            cpp_generator.addRaw('}');
             break;
         case 'BinaryExpression':
             //something like a>5 or 1!=2
@@ -256,9 +254,10 @@ function parse_node(node){ //options=defaultOptions
         case 'BlockStatement':
             soptions = globalThis.options;
             for (subnode of node.body){
-                parse_node(subnode);
                 globalThis.options=soptions; //restore options
                 //this is used to add spaces into function's body
+                parse_node(subnode);
+                globalThis.options={};
             }
             break;
         case 'ExpressionStatement':
@@ -287,7 +286,7 @@ function parse_node(node){ //options=defaultOptions
                     //delete traling ,
                 cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
                 }
-                cpp_generator.addCode(')'); //replace last , with )
+                cpp_generator.addCode(')');
             }
             else if (expr.type=='AssignmentExpression'){
                 const oneVariable = expr.left.type==='Identifier' && expr.right.type!=='Identifier';
@@ -300,7 +299,6 @@ function parse_node(node){ //options=defaultOptions
                     if (leftType!==rightType){
                         throw new TypeError(`Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`);
                     }
-                    console.warn(`We coudn\'t check typeof ${expr.left.name}`);
                     cpp_generator.addRaw(`${expr.left.name} = `);
                     parse_node(expr.right);
                     cpp_generator.addRaw(';\n');
