@@ -39,6 +39,7 @@ class CPPGenerator{
     constructor(){
         this._cpp = ""; //cpp code
         this.types = {}; //types of js variables
+        this.functions={}; //functions arguments' types
         this._modules = new Set(['<iostream>']); //cpp includes
     }
 
@@ -55,6 +56,17 @@ class CPPGenerator{
         const spaces = this._getSpacesByLevel(options.level);
         this._cpp += `${spaces}${code};\n`;
     }
+    
+    /*buildFunction(name){
+        const func = this.functions[name];
+        let code = `${func.ret} ${name}(`;
+        for (let arg in func.args){
+           code+=`${func.args[arg]} ${arg}, `; 
+        }
+        code+='){\n';
+        code+=func.code;
+        code+='}';
+    }*/
     
     addRaw(code){
         const options = globalThis.options||defaultOptions;
@@ -152,7 +164,6 @@ function parse_node(node){ //options=defaultOptions
             cpp_generator.addRaw(`"${node.value}"`);
             break;
         case 'ArrayExpression':
-           console.log(node);
             const elements = node.elements;
             cpp_generator.addRaw(`{`);
             for (element of elements) {
@@ -206,16 +217,15 @@ function parse_node(node){ //options=defaultOptions
         case 'FunctionDeclaration':
             JS_assert(!node.async,'We don\'t support async functions');
             JS_assert(!node.generator,'We don\'t support generators');
+            const function_name = node.id.name;
+            cpp_generator.functions[function_name]={args:{},}; //ret:'void',code:''
             cpp_generator.addRaw(`auto ${node.id.name}=[](`);
-            if (node.params.length!==0){
-                console.log(node.params);
-                throw new Error('We don\'t support functions with params');
-            }
-            /*for (param of node.params){
-                cpp_generator.addRaw('vector<int64_t> '); //TODO: get type from typescript
+            for (param of node.params){
+                cpp_generator.functions[function_name].args[param.name]=''; //unknown type
                 parse_node(param);
-                cpp_generator.addRaw(',');
-            }*/
+                cpp_generator.addRaw(', ');
+            }
+            cpp_generator._cpp=cpp_generator._cpp.slice(0,-2);
             cpp_generator.addRaw('){\n');
             globalThis.options={level:2};
             parse_node(node.body);
@@ -260,13 +270,22 @@ function parse_node(node){ //options=defaultOptions
                     function_name = expr.callee.name;
                     cpp_generator.addRaw(`${function_name}(`);
                 }
-                //FIXME: commented code below doesn't work with std functions like console.log
-                /*if (cpp_generator.functions[function_name]!=expr.arguments.length){
-                    throw new TypeError(`Incorrect number of arguments passed to ${function_name}`);
-                }*/
+                let i = 0;
+                const func = cpp_generator.functions[function_name];
+                const argumentsNames = func?Object.keys(func.args):[]; //function f(a,b) -> ['a','b']
                 for (argument of expr.arguments){
+                    if (func!==undefined){
+                        //if it's user defined function
+                        const argumentName = argumentsNames[i];
+                        const type = getType(argument);
+                        if (func.args[argumentName]!='' && type!=func.args[argumentName]){
+                            throw new TypeError(`Invalid typeof argument ${argumentName}, expected: ${func.args[argumentName]}, actual: ${type}`);
+                        }
+                        func.args[argumentName]=type;
+                    }
                     parse_node(argument);
                     cpp_generator.addRaw(', ');
+                    i++;
                 }
                 if (expr.arguments.length!==0){
                     //delete traling ,
