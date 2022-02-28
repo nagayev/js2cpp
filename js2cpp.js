@@ -225,7 +225,9 @@ function parse_node(node){ //options=defaultOptions
                 parse_node(param);
                 cpp_generator.addRaw(', ');
             }
-            cpp_generator._cpp=cpp_generator._cpp.slice(0,-2);
+            if (node.params.length!==0){
+                cpp_generator._cpp=cpp_generator._cpp.slice(0,-2);
+            }
             cpp_generator.addRaw('){\n');
             globalThis.options={level:2};
             parse_node(node.body);
