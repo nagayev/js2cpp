@@ -1,8 +1,8 @@
-name: 'Test js2cpp'
+name: 'Test js2cpp on Linux'
 on:
   push:
 jobs:
-  test-compiler:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

@@ -1,8 +1,8 @@
-name: 'Test js2cpp'
+name: 'Test js2cpp on Windows'
 on:
   push:
 jobs:
-  test-compiler:
+  build-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -12,16 +12,15 @@ jobs:
         node-version: '14.x'
     
     - name: Set up Compiler
-      uses: egor-tensin/setup-gcc@v1
+      uses: egor-tensin/setup-mingw@v2
       with:
-        version: latest
         platform: x64
     
     - name: 'Installing deps'
       run: npm install
 
     - name: 'Compiling'
-      run: ./compile.sh
+      run: bash ./compile.sh
       
     - name: 'Running'
       run: g++ js_result.cpp -o js_bin && ./js_bin
