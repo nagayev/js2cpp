@@ -1,7 +1,6 @@
 //js2cpp test.js -s stdlib -o output/js_bin --cpp
 const fs = require('fs');
 const assert = require('assert');
-const child_process = require('child_process');
 
 const { ArgumentParser } = require('argparse');
 const {parse} = require("@babel/parser");
@@ -68,7 +67,7 @@ class CPPGenerator{
     }
 
     _getSpacesByLevel(level){
-        ////3 spaces for level 2, 6 for level 3
+        //3 spaces for level 2, 6 for level 3
         return ' '.repeat(3*(level-1));
     }
     
@@ -129,13 +128,15 @@ function getType(node){
         case 'UnaryExpression':
         case 'NumericLiteral':
             ctype="int64_t";
-            const value = node.value;
-            if (value===undefined && node.declarations[0].init.operator){
-                value = node.declarations[0].init.argument.value;
-                /*console.log(value);
-                if (node.declarations[0].init.operator==='-') value*=-1; */
+            let value = node.value;
+            //If it's unary expression (something like -2)
+            if (value===undefined && node.operator){
+                value = node.argument.value;
             }
             if (value!=parseInt(value)) ctype="float";
+            break;
+        case 'BooleanLiteral':
+            ctype="bool";
             break;
         case 'StringLiteral':
             ctype="string";
@@ -232,7 +233,7 @@ function parse_node(node){ //options=defaultOptions
                     //TODO: assert that operator is + or - (+2 or -2.1)
                     //FIXME: fix unary +
                     value = node.declarations[0].init.argument.value; 
-                    if (node.declarations[0].init.operator==='-') value='-'+value; 
+                    if (operator==='-') value='-'+value; 
                 }
                 code = `${type} ${node.declarations[0].id.name} = ${value}`;
             }
@@ -289,8 +290,9 @@ function parse_node(node){ //options=defaultOptions
                     const module_name = expr.callee.object.name; //f.g console
                     function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
-                    if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) args.stdlib=args.stdlib+'/';
-                    cpp_generator.addImport(`"${args.stdlib}${module_name}/${function_name}.h"`); //#include "console/log.h"
+                    let slash = "";
+                    if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) slash="/";
+                    cpp_generator.addImport(`"${args.stdlib}${slash}${module_name}/${function_name}.h"`); //#include "console/log.h"
                 }
                 //handle something like test(1);
                 else if (expr.callee.type=='Identifier'){
@@ -353,6 +355,10 @@ function parse_node(node){ //options=defaultOptions
             }
             break;
         case 'IfStatement':
+            if (node.consequent.body.length===0){
+                //skip if with empty body
+                break;
+            }
             cpp_generator.addRaw('if (');
             parse_node(node.test); //condition
             cpp_generator.addRaw(') {\n')
