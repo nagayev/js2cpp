@@ -1,3 +1,5 @@
+echo "Creating output"
+mkdir output
 echo "Compiling correct.js"
 node js2cpp.js tests/correct.js
 echo "Compiling incorrect.js"
