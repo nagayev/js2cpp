@@ -121,7 +121,7 @@ class CPPGenerator{
 
 const cpp_generator = new CPPGenerator(args.output);
 
-function getType(node){
+function getType(node,anotherNode){
     let ctype; 
     let js_type = node.type;
     switch (js_type){
@@ -166,9 +166,17 @@ function getType(node){
             throw new Error('We coudn\'t understood function\'s returning type');
             break;
         case 'MemberExpression':
-            const err = 'We coudn\'t understood type\n';
-            throw new Error(err+'Probably you are trying to do something like: let c=arr[i+1]');
-            //ctype = "int64_t";
+            const typeOfArray = cpp_generator.types[node.object.name];
+            const typeOfElement = typeOfArray.slice(typeOfArray.indexOf('<')+1,typeOfArray.indexOf('>'));
+            const typeOfLeft = cpp_generator.types[anotherNode.name];
+            if (typeOfLeft!==undefined && typeOfElement===typeOfLeft){
+                ctype = typeOfElement;
+            }
+            else{
+                const err = `You are trying to do something like: let c=arr[i+1], `;
+                throw new TypeError(err+`but c type is ${typeOfLeft} and arr type is ${typeOfArray}`);
+            }
+            break;
             break;
         default:
             throw new TypeError(`Unknown type ${js_type}`);
@@ -329,7 +337,9 @@ function parse_node(node){ //options=defaultOptions
                 let rightType;
                 if(oneVariable){
                     //something like a = 5;
-                    rightType = getType(expr.right);
+                    //left is passed for case like b = a[0]
+                    //we need both of variable names (b and a)
+                    rightType = getType(expr.right,expr.left); 
                     if (leftType!==rightType){
                         throw new TypeError(`Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`);
                     }
@@ -388,6 +398,18 @@ function parse_node(node){ //options=defaultOptions
             globalThis.options={level:2};
             parse_node(node.body);
             cpp_generator.addRaw('}\n');
+            break;
+        case 'MemberExpression':
+            //handle case like arr[j]
+            if (node.property.type=='BinaryExpression'){
+                //handle case like arr[j] > arr[j + 1]
+                throw new Error('Unsupported BinaryExpression');
+            }
+            const name = node.object.name;
+            if (cpp_generator.types[name]===undefined){
+                throw new Error(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
+            }
+            cpp_generator.addRaw(`${node.object.name}[${node.property.value}]`);
             break;
         case 'ReturnStatement':
             throw new Error('We haven\'t support returning value yet');
