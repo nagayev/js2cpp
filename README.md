@@ -3,7 +3,7 @@
 ## Intro 
 
 js2cpp is a compiler for converting JavaScript to C++.   
-In comparison with some other projects like QuickJS compiler, js2cpp generates no-overhead C++ code that can be compiled then.  
+In comparison with some other projects like QuickJS compiler, js2cpp generates no-overhead C++ code that can be compiled.  
 **js2cpp is currently an Alpha quality compiler**.  
 This means that js2cpp is under heavy development and you have to be ready to encounter some problems.   
 Different things may not work well.  
@@ -20,7 +20,7 @@ console.log(a);
 ```cpp
 //Auto generated code using js2cpp
 #include <iostream>
-#include "console/log.h"
+#include "stdlib/console/log.h"
 using namespace std;
 int main(){
 string a = "Hello world";
@@ -32,7 +32,10 @@ return 0;
 
 ## Usage
 
-It's very easy. You need to run `node js2cpp.js your_js_file` and you'll get file `js_result.cpp`.  
+It's very easy. You need to run `node js2cpp.js your_js_file` and you'll get file `js_result.cpp`. 
+### Options
+-o --output Output name, default is js_result.cpp  
+-s --stdlib Path to stdlib folder, default is stdlib  
 It can be compiled using C++ compiler like `g++` (for details see page Compiling in our Wiki).  
 
 ## License
