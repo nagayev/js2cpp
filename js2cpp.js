@@ -1,15 +1,38 @@
+//js2cpp test.js -s stdlib -o output/js_bin --cpp
 const fs = require('fs');
 const assert = require('assert');
+const child_process = require('child_process');
 
+const { ArgumentParser } = require('argparse');
 const {parse} = require("@babel/parser");
 
-if (process.argv.length!=3){
+const defaultArgs = {
+    output:'js_result.cpp',
+    stdlib:'stdlib',
+    cpp:false
+};
+const parser = new ArgumentParser({});
+parser.add_argument("filename", {type:"str", help:"Input Javascript file"});
+parser.add_argument('-o', '--output', { help: `Output name, default is ${defaultArgs.output}` });
+parser.add_argument('-s', '--stdlib', { help: `Path to stdlib folder, default is ${defaultArgs.stdlib}` });
+
+if (process.argv.length<3){
     console.error("Invalid script usage!");
-    console.log("Usage: node js2cpp.js path_to_your_source.js");
-    process.exit(1);
 }
+
+const args = parser.parse_args();
+//Set default values
+for (let key in defaultArgs){
+    if (args[key]===undefined){
+        args[key]=defaultArgs[key];
+    }
+}
+if (args.stdlib=='.'){
+    args.stdlib='';
+}
+
 let jscode,ast;
-jscode = fs.readFileSync(process.argv[2]).toString('utf-8');
+jscode = fs.readFileSync(args.filename).toString('utf-8');
 
 
 try{
@@ -36,11 +59,12 @@ function JS_assert(value,message){
 const defaultOptions = {level:1}; //NOTE: level is applyed to all nodes!
 class CPPGenerator{
     
-    constructor(){
+    constructor(filename='js_bin'){
         this._cpp = ""; //cpp code
         this.types = {}; //types of js variables
         this.functions={}; //functions arguments' types
         this._modules = new Set(['<iostream>']); //cpp includes
+        this.filename = filename;
     }
 
     _getSpacesByLevel(level){
@@ -91,12 +115,12 @@ class CPPGenerator{
         prolog+="using namespace std;\n";
         prolog+="int main(){\n";
         this._cpp = prolog + this._cpp + epilog;
-        fs.writeFileSync('output/js_result.cpp',this._cpp);
+        fs.writeFileSync(this.filename,this._cpp);
     }
     
 }
 
-const cpp_generator = new CPPGenerator(jscode);
+const cpp_generator = new CPPGenerator(args.output);
 
 function getType(node){
     let ctype; 
@@ -265,7 +289,8 @@ function parse_node(node){ //options=defaultOptions
                     const module_name = expr.callee.object.name; //f.g console
                     function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
-                    cpp_generator.addImport(`"${module_name}/${function_name}.h"`); //#include "console/log.h"
+                    if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) args.stdlib=args.stdlib+'/';
+                    cpp_generator.addImport(`"${args.stdlib}${module_name}/${function_name}.h"`); //#include "console/log.h"
                 }
                 //handle something like test(1);
                 else if (expr.callee.type=='Identifier'){
@@ -376,7 +401,7 @@ function main_parse(){
 
 function main(){
     main_parse();
-    console.log('Compiled successfully!\nSee js_result.cpp');
+    console.log(`Compiled successfully!\nSee ${args.output}`);
     cpp_generator.save();
 }
 main();

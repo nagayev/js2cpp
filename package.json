@@ -10,6 +10,7 @@
   "author": "Marat Nagayev",
   "license": "MIT",
   "dependencies": {
+    "argparse": "^2.0.1",
     "ast": "^1.0.7"
   }
 }
