@@ -91,7 +91,7 @@ class CPPGenerator{
         prolog+="using namespace std;\n";
         prolog+="int main(){\n";
         this._cpp = prolog + this._cpp + epilog;
-        fs.writeFileSync('js_result.cpp',this._cpp);
+        fs.writeFileSync('output/js_result.cpp',this._cpp);
     }
     
 }
