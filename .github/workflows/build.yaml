@@ -1,9 +1,12 @@
-name: 'Test js2cpp on Linux'
+name: 'Test js2cpp'
 on:
   push:
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
@@ -16,12 +19,15 @@ jobs:
 
     - name: 'Compiling'
       run: ./compile.sh
+      shell: bash
       
     - name: 'Running'
       run: g++ output/js_result.cpp -o output/js_bin && output/js_bin>log.txt
+      shell: bash
 
     - name: 'Check results'
       run:  diff log.txt expected_results.txt && exit $?
+      shell: bash
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
