@@ -184,6 +184,30 @@ function getExpressionType(node,anotherNode){
     return ctype;
 }
 
+//Returns typeof elements, f.g vector<int64_t> -> int64_t
+function getTypeOfElements(typeOfArray){
+    return typeOfArray.slice(typeOfArray.indexOf('<')+1,typeOfArray.indexOf('>'));
+}
+
+//Returnes type of variable if we remember it
+function getVariableType(node){
+    let ctype;
+    if (typeof node==='string') return cpp_generator.types[node];
+    switch (node.type){
+        case 'MemberExpression':
+            //TODO: test it
+            ctype=getVariableType(node.object.name);
+            ctype=getTypeOfElements(ctype);
+            break;
+        case 'Identifier':
+            ctype=cpp_generator.types[node.name];
+            break;
+        default:
+            throw TypeError(`getVariableType failed ${node.type}`);
+    }
+    return ctype;
+}
+
 //TODO: move parsing to several modules
 function parse_node(node){ //options=defaultOptions
     /*if(options!==defaultOptions){
@@ -313,9 +337,11 @@ function parse_node(node){ //options=defaultOptions
                 cpp_generator.addCode(')');
             }
             else if (expr.type=='AssignmentExpression'){
-                const oneVariable = expr.left.type==='Identifier' && expr.right.type!=='Identifier';
-                const variable = expr.left.name;
-                let leftType = cpp_generator.types[variable];
+                //MemberExpression arr[j] = something;
+                const isVariable = (expr) => expr.type==='Identifier' || expr.type==='MemberExpression';
+                const oneVariable = isVariable(expr.left) && !isVariable(expr.right);
+                const variable = expr.left.name || 'JS_undefined';
+                let leftType = getVariableType(expr.left);
                 let rightType;
                 if(oneVariable){
                     //something like a = 5;
@@ -331,13 +357,15 @@ function parse_node(node){ //options=defaultOptions
                 }
                 else{
                     //something like a = b, not a = 5
-                    const anotherVariable = expr.right.name;
-                    rightType = cpp_generator.types[anotherVariable];
-                    if (leftType!=rightType){
+                    rightType = getVariableType(expr.right);
+                    if (leftType!==rightType){
                         //TODO: use node.loc
-                        throw new TypeError(`Variable ${variable} has type ${leftType}, not ${rightType}`);
+                        //throw new TypeError(`Variable ${variable} has type ${leftType}, not ${rightType}`);
                     }
-                    cpp_generator.addCode(`${variable} = ${expr.right.name}`)
+                    parse_node(expr.left);
+                    cpp_generator.addRaw('=');
+                    parse_node(expr.right);
+                    cpp_generator.addCode('');
                 }
                    
             }
