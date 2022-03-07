@@ -153,7 +153,7 @@ function getExpressionType(node,anotherNode){
                 return element.type == first_type; 
             }
             JS_assert(elements.every(isEqual),'array\'s elements must be not heterogeneous');
-            ctype = `vector<${getType(first_element)}>`;
+            ctype = `vector<${getExpressionType(first_element)}>`;
             cpp_generator.addImport('<vector>');
             break;
         case 'ObjectExpression':
@@ -296,7 +296,7 @@ function parse_node(node){ //options=defaultOptions
                     if (func!==undefined){
                         //if it's user defined function
                         const argumentName = argumentsNames[i];
-                        const type = getType(argument);
+                        const type = getExpressionType(argument);
                         if (func.args[argumentName]!='' && type!=func.args[argumentName]){
                             throw new TypeError(`Invalid typeof argument ${argumentName}, expected: ${func.args[argumentName]}, actual: ${type}`);
                         }
@@ -321,7 +321,7 @@ function parse_node(node){ //options=defaultOptions
                     //something like a = 5;
                     //left is passed for case like b = a[0]
                     //we need both of variable names (b and a)
-                    rightType = getType(expr.right,expr.left); 
+                    rightType = getExpressionType(expr.right,expr.left); 
                     if (leftType!==rightType){
                         throw new TypeError(`Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`);
                     }
