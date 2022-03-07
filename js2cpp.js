@@ -389,9 +389,14 @@ function parse_node(node){ //options=defaultOptions
             }
             const name = node.object.name;
             if (cpp_generator.types[name]===undefined){
-                throw new Error(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
+                //TODO: it maybe function param
+                //throw new Error(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
+                console.warn(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
             }
-            cpp_generator.addRaw(`${node.object.name}[${node.property.value}]`);
+            parse_node(node.object);
+            cpp_generator.addRaw('[');
+            parse_node(node.property);
+            cpp_generator.addRaw(']');
             break;
         case 'ReturnStatement':
             throw new Error('We haven\'t support returning value yet');
