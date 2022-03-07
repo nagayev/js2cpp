@@ -18,7 +18,11 @@ jobs:
       run: ./compile.sh
       
     - name: 'Running'
-      run: g++ output/js_result.cpp -o output/js_bin && output/js_bin
+      run: g++ output/js_result.cpp -o output/js_bin && output/js_bin>log.txt
+
+    - name: 'Check results'
+      run:  diff log.txt expected_results.txt && exit $?
+    
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
