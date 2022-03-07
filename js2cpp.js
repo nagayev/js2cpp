@@ -196,6 +196,9 @@ function parse_node(node){ //options=defaultOptions
         case 'StringLiteral':
             cpp_generator.addRaw(`"${node.value}"`);
             break;
+        case 'BooleanLiteral':
+            cpp_generator.addRaw(`${node.value}`);
+            break;
         case 'ArrayExpression':
             const elements = node.elements;
             cpp_generator.addRaw(`{`);
