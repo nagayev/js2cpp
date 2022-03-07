@@ -121,7 +121,7 @@ class CPPGenerator{
 
 const cpp_generator = new CPPGenerator(args.output);
 
-function getType(node,anotherNode){
+function getExpressionType(node,anotherNode){
     let ctype; 
     let js_type = node.type;
     switch (js_type){
@@ -216,36 +216,15 @@ function parse_node(node){ //options=defaultOptions
             parse_node(node.right);
             break;
         case 'VariableDeclaration':
-            //FIXME: hacky code
             const variable = node.declarations[0].id.name;
-            type = getType(node.declarations[0].init);
+            if (node.kind==='const') cpp_generator.addRaw('const ');
+            type = getExpressionType(node.declarations[0].init);
             cpp_generator.types[variable]=type;
-            let code = '';
-            if (type=="string") code = `${type} ${variable} = "${node.declarations[0].init.value}"`;
-            else if (type.includes("vector")){
-                const elements = node.declarations[0].init.elements;
-                cpp_generator.addRaw(`${type} ${node.declarations[0].id.name} = {`);
-                for (element of elements) {
-                    parse_node(element); //TODO: maybe we need ret code's mode
-                    cpp_generator.addRaw(',');
-                }
-                if (elements.length!==0){
-                    //delete traling ,
-                    cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
-                }
-                cpp_generator.addCode('}');
-            }
-            else{
-                let value = node.declarations[0].init.value;
-                if (value===undefined){
-                    //TODO: assert that operator is + or - (+2 or -2.1)
-                    //FIXME: fix unary +
-                    value = node.declarations[0].init.argument.value; 
-                    if (operator==='-') value='-'+value; 
-                }
-                code = `${type} ${node.declarations[0].id.name} = ${value}`;
-            }
-            if (code!='') cpp_generator.addCode(code);
+            cpp_generator.addRaw(`${type} `);
+            parse_node(node.declarations[0].id);
+            cpp_generator.addRaw(' = ');
+            parse_node(node.declarations[0].init);
+            cpp_generator.addCode('');
             break;
         case 'FunctionDeclaration':
             JS_assert(!node.async,'We don\'t support async functions');
