@@ -55,9 +55,8 @@ catch(e){
 
 const nodes = ast.program.body;
 
-//FIXME: invert assert (true -> false)
 function JS_type_assert(value,message){
-    if (!args.no_type_checks) JS_assert(!value,message,TypeError);
+    if (!args.no_type_checks) JS_assert(value,message,TypeError);
 }
 
 function JS_assert(value,message,CustomError = Error){
@@ -160,7 +159,7 @@ function getExpressionType(node,anotherNode){
             const elements = node.elements;
             const first_element = elements[0]; 
             const message = 'You coudn\'t declare empty array: we don\'t know it\'s type';
-            JS_type_assert(first_element===undefined,message);
+            JS_type_assert(first_element!==undefined,message);
             const first_type = first_element.type;
             const isEqual = (element) => {
                 return element.type == first_type; 
@@ -361,7 +360,7 @@ function parse_node(node){ //options=defaultOptions
                     //we need both of variable names (b and a)
                     rightType = getExpressionType(expr.right,expr.left); 
                     const message = `Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`;
-                    JS_type_assert(leftType!==rightType,message);
+                    JS_type_assert(leftType===rightType,message);
                     cpp_generator.addRaw(`${expr.left.name} = `);
                     parse_node(expr.right);
                     cpp_generator.addRaw(';\n');
