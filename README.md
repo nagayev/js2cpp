@@ -7,7 +7,7 @@ In comparison with some other projects like QuickJS compiler, js2cpp generates n
 **js2cpp is currently an Alpha quality compiler**.  
 This means that js2cpp is under heavy development and you have to be ready to encounter some problems.   
 Different things may not work well.  
-For more information see [STATUS](https://github.com/nagayev/js2cpp/blob/master/STATUS) file.  
+For more information see [STATUS](https://github.com/nagayev/js2cpp/blob/master/STATUS.MD) file.  
 
 ### In
 
@@ -36,6 +36,8 @@ It's very easy. You need to run `node js2cpp.js your_js_file` and you'll get fil
 ### Options
 -o --output Output name, default is js_result.cpp  
 -s --stdlib Path to stdlib folder, default is stdlib  
+--no_type_checks Don't check JavaScript types, default is false  
+
 It can be compiled using C++ compiler like `g++` (for details see page Compiling in our Wiki).  
 
 ## License

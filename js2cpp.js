@@ -8,18 +8,28 @@ const {parse} = require("@babel/parser");
 const defaultArgs = {
     output:'js_result.cpp',
     stdlib:'stdlib',
-    cpp:false
+    no_type_checks:false
 };
+
 const parser = new ArgumentParser({});
+
 parser.add_argument("filename", {type:"str", help:"Input Javascript file"});
 parser.add_argument('-o', '--output', { help: `Output name, default is ${defaultArgs.output}` });
 parser.add_argument('-s', '--stdlib', { help: `Path to stdlib folder, default is ${defaultArgs.stdlib}` });
+parser.add_argument('--no_type_checks', '--no-type-checks', { help: `Don't check JavaScript types, default is ${defaultArgs.no_types}`,
+action:'store_true' });
 
 if (process.argv.length<3){
     console.error("Invalid script usage!");
 }
 
 const args = parser.parse_args();
+
+//Check experimental args
+
+if (args.no_type_checks){
+    console.warn(`WARNING: \`no-type-checks\` is a very unstable feature`);
+}
 //Set default values
 for (let key in defaultArgs){
     if (args[key]===undefined){
@@ -45,12 +55,17 @@ catch(e){
 
 const nodes = ast.program.body;
 
-function JS_assert(value,message){
+//FIXME: invert assert (true -> false)
+function JS_type_assert(value,message){
+    if (!args.no_type_checks) JS_assert(!value,message,TypeError);
+}
+
+function JS_assert(value,message,CustomError = Error){
     try{
         assert(value,message);
     }
     catch(e){
-        throw new Error(message);
+        throw new CustomError(message);
     }
 }
 
@@ -58,7 +73,7 @@ function JS_assert(value,message){
 const defaultOptions = {level:1}; //NOTE: level is applyed to all nodes!
 class CPPGenerator{
     
-    constructor(filename='js_bin'){
+    constructor(filename='js_result.cpp'){
         this._cpp = ""; //cpp code
         this.types = {}; //types of js variables
         this.functions={}; //functions arguments' types
@@ -144,15 +159,13 @@ function getExpressionType(node,anotherNode){
         case 'ArrayExpression':
             const elements = node.elements;
             const first_element = elements[0]; 
-            if (first_element===undefined){
-                //empty array
-                throw new Error('You coudn\'t declare empty array: we don\'t know it\'s type');
-            }
+            const message = 'You coudn\'t declare empty array: we don\'t know it\'s type';
+            JS_type_assert(first_element===undefined,message);
             const first_type = first_element.type;
             const isEqual = (element) => {
                 return element.type == first_type; 
             }
-            JS_assert(elements.every(isEqual),'array\'s elements must be not heterogeneous');
+            JS_type_assert(elements.every(isEqual),'array\'s elements must be not heterogeneous');
             ctype = `vector<${getExpressionType(first_element)}>`;
             cpp_generator.addImport('<vector>');
             break;
@@ -174,7 +187,7 @@ function getExpressionType(node,anotherNode){
             }
             else{
                 const err = `You are trying to do something like: let c=arr[i+1], `;
-                throw new TypeError(err+`but c type is ${typeOfLeft} and arr type is ${typeOfArray}`);
+                JS_type_assert(true,err+`but c type is ${typeOfLeft} and arr type is ${typeOfArray}`);
             }
             break;
             break;
@@ -321,9 +334,8 @@ function parse_node(node){ //options=defaultOptions
                         //if it's user defined function
                         const argumentName = argumentsNames[i];
                         const type = getExpressionType(argument);
-                        if (func.args[argumentName]!='' && type!=func.args[argumentName]){
-                            throw new TypeError(`Invalid typeof argument ${argumentName}, expected: ${func.args[argumentName]}, actual: ${type}`);
-                        }
+                        const message = `Invalid typeof argument ${argumentName}, expected: ${func.args[argumentName]}, actual: ${type}`;
+                        JS_type_assert(func.args[argumentName]!='' && type!=func.args[argumentName],message);
                         func.args[argumentName]=type;
                     }
                     parse_node(argument);
@@ -348,9 +360,8 @@ function parse_node(node){ //options=defaultOptions
                     //left is passed for case like b = a[0]
                     //we need both of variable names (b and a)
                     rightType = getExpressionType(expr.right,expr.left); 
-                    if (leftType!==rightType){
-                        throw new TypeError(`Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`);
-                    }
+                    const message = `Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`;
+                    JS_type_assert(leftType!==rightType,message);
                     cpp_generator.addRaw(`${expr.left.name} = `);
                     parse_node(expr.right);
                     cpp_generator.addRaw(';\n');
