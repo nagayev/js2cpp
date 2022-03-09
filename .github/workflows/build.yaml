@@ -22,7 +22,7 @@ jobs:
       shell: bash
       
     - name: 'Running'
-      run: g++ output/js_result.cpp -o output/js_bin && output/js_bin>log.txt
+      run: output/js_bin>log.txt
       shell: bash
 
     - name: 'Check results'
