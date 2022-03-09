@@ -8,7 +8,8 @@ const {parse} = require("@babel/parser");
 const defaultArgs = {
     output:'js_result.cpp',
     stdlib:'stdlib',
-    no_type_checks:false
+    no_type_checks:false,
+    no_format:false
 };
 
 const parser = new ArgumentParser({});
@@ -17,6 +18,8 @@ parser.add_argument("filename", {type:"str", help:"Input Javascript file"});
 parser.add_argument('-o', '--output', { help: `Output name, default is ${defaultArgs.output}` });
 parser.add_argument('-s', '--stdlib', { help: `Path to stdlib folder, default is ${defaultArgs.stdlib}` });
 parser.add_argument('--no_type_checks', '--no-type-checks', { help: `Don't check JavaScript types, default is ${defaultArgs.no_types}`,
+action:'store_true' });
+parser.add_argument('--no_format', '--no-format', { help: `Don't format output code, default is ${defaultArgs.no_format}`,
 action:'store_true' });
 
 if (process.argv.length<3){
@@ -55,6 +58,15 @@ catch(e){
 
 const nodes = ast.program.body;
 
+const lockIndent = () => cpp_generator.options.locked = true;
+const unlockIndent = () => cpp_generator.options.locked = false;
+
+const incrementIndent = () =>  cpp_generator.options.level++;
+const decrementIndent = () => {
+    cpp_generator.options.level--;
+    unlockIndent();
+}
+
 function JS_type_assert(value,message){
     if (!args.no_type_checks) JS_assert(value,message,TypeError);
 }
@@ -69,7 +81,11 @@ function JS_assert(value,message,CustomError = Error){
 }
 
 
-const defaultOptions = {level:1}; //NOTE: level is applyed to all nodes!
+const defaultOptions = {
+    level:1,
+    locked:false //true if we want to ignore level
+};
+
 class CPPGenerator{
     
     constructor(filename='js_result.cpp'){
@@ -77,19 +93,18 @@ class CPPGenerator{
         this.types = {}; //types of js variables
         this.functions={}; //functions arguments' types
         this._modules = new Set(['<iostream>']); //cpp includes
-        this.filename = filename;
+        this.options = defaultOptions; //options like formating
+        this._filename = filename; //output filename
     }
 
     _getSpacesByLevel(level){
         //3 spaces for level 2, 6 for level 3
+        if (this.options.locked || args.no_format) return '';
         return ' '.repeat(3*(level-1));
     }
     
     addCode(code){
-        const options = globalThis.options||defaultOptions;
-        if (globalThis.options!==defaultOptions){
-            globalThis.options=defaultOptions;
-        }
+        const options = this.options;
         const spaces = this._getSpacesByLevel(options.level);
         this._cpp += `${spaces}${code};\n`;
     }
@@ -106,10 +121,7 @@ class CPPGenerator{
     }*/
     
     addRaw(code){
-        const options = globalThis.options||defaultOptions;
-        if (globalThis.options!==defaultOptions){
-            globalThis.options=defaultOptions;
-        }
+        const options = this.options;
         const spaces = this._getSpacesByLevel(options.level);
         this._cpp += `${spaces}${code}`;
     }
@@ -128,7 +140,7 @@ class CPPGenerator{
         prolog+="using namespace std;\n";
         prolog+="int main(){\n";
         this._cpp = prolog + this._cpp + epilog;
-        fs.writeFileSync(this.filename,this._cpp);
+        fs.writeFileSync(this._filename,this._cpp);
     }
     
 }
@@ -280,8 +292,9 @@ function parse_node(node){ //options=defaultOptions
                 cpp_generator._cpp=cpp_generator._cpp.slice(0,-2);
             }
             cpp_generator.addRaw('){\n');
-            globalThis.options={level:2};
+            incrementIndent();
             parse_node(node.body);
+            decrementIndent();
             cpp_generator.addCode(`}`);
             break;
         case 'Identifier':
@@ -297,12 +310,8 @@ function parse_node(node){ //options=defaultOptions
             }
             break;
         case 'BlockStatement':
-            soptions = globalThis.options;
             for (subnode of node.body){
-                globalThis.options=soptions; //restore options
-                //this is used to add spaces into function's body
                 parse_node(subnode);
-                globalThis.options={};
             }
             break;
         case 'ExpressionStatement':
@@ -328,6 +337,7 @@ function parse_node(node){ //options=defaultOptions
                 let i = 0;
                 const func = cpp_generator.functions[function_name];
                 const argumentsNames = func?Object.keys(func.args):[]; //function f(a,b) -> ['a','b']
+                lockIndent();
                 for (argument of expr.arguments){
                     if (func!==undefined){
                         //if it's user defined function
@@ -346,6 +356,7 @@ function parse_node(node){ //options=defaultOptions
                     cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
                 }
                 cpp_generator.addCode(')');
+                unlockIndent();
             }
             else if (expr.type=='AssignmentExpression'){
                 //MemberExpression arr[j] = something;
@@ -391,12 +402,16 @@ function parse_node(node){ //options=defaultOptions
             }
             cpp_generator.addRaw('if (');
             parse_node(node.test); //condition
-            cpp_generator.addRaw(') {\n')
+            cpp_generator.addRaw(') {\n');
+            incrementIndent();
             parse_node(node.consequent); //if's body
+            decrementIndent();
             cpp_generator.addRaw('}\n');
             if (node.alternate!=null){
                cpp_generator.addRaw('else {\n');
+               incrementIndent();
                parse_node(node.alternate); //parsing else 
+               decrementIndent();
                cpp_generator.addRaw('}\n');
             } 
             break;
@@ -415,8 +430,9 @@ function parse_node(node){ //options=defaultOptions
             cpp_generator.addRaw(';');
             parse_node(node.update);
             cpp_generator.addRaw('){\n');
-            globalThis.options={level:2};
+            incrementIndent();
             parse_node(node.body);
+            decrementIndent();
             cpp_generator.addRaw('}\n');
             break;
         case 'MemberExpression':
