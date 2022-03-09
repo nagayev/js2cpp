@@ -20,14 +20,6 @@ jobs:
     - name: 'Compiling'
       run: ./compile.sh
       shell: bash
-      
-    - name: 'Running'
-      run: output/js_bin>log.txt
-      shell: bash
-
-    - name: 'Check results'
-      run:  diff log.txt expected_results.txt && exit $?
-      shell: bash
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
