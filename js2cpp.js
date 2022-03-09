@@ -190,10 +190,16 @@ function getExpressionType(node,anotherNode){
             throw new Error('We coudn\'t understood function\'s returning type');
             break;
         case 'MemberExpression':
-            const typeOfArray = cpp_generator.types[node.object.name];
-            const typeOfElement = typeOfArray.slice(typeOfArray.indexOf('<')+1,typeOfArray.indexOf('>'));
-            const typeOfLeft = cpp_generator.types[anotherNode.name];
-            if (typeOfLeft!==undefined && typeOfElement===typeOfLeft){
+            const typeOfArray = getVariableType(node.object.name); //something like vector<int64_t>
+            const typeOfElement = getTypeOfElements(typeOfArray); //int64_t
+            let typeOfLeft;
+            if (anotherNode===undefined){
+                typeOfLeft = undefined;
+            }
+            else typeOfLeft = getVariableType(anotherNode.name);
+            //typeOfLeft is undefined when we declare new variable
+            //so we should accept expression like let temp = arr[i]
+            if (typeOfLeft===undefined || typeOfElement===typeOfLeft){
                 ctype = typeOfElement;
             }
             else{
@@ -201,6 +207,14 @@ function getExpressionType(node,anotherNode){
                 JS_type_assert(true,err+`but c type is ${typeOfLeft} and arr type is ${typeOfArray}`);
             }
             break;
+        case 'BinaryExpression':
+            const comparasionOperators = ['>','<','>=','<=','!=','=='];
+            if (comparasionOperators.includes(node.operator)){
+                ctype = "bool";
+            }
+            else{
+                throw new Error('Unknown BinaryExpression');
+            }
             break;
         default:
             throw new TypeError(`Unknown type ${js_type}`);
@@ -233,10 +247,7 @@ function getVariableType(node){
 }
 
 //TODO: move parsing to several modules
-function parse_node(node){ //options=defaultOptions
-    /*if(options!==defaultOptions){
-        globalThis.options=options;
-    }*/
+function parse_node(node){
     switch(node.type){
         case 'NumericLiteral':
             cpp_generator.addRaw(`${node.value}`);
@@ -437,10 +448,6 @@ function parse_node(node){ //options=defaultOptions
             break;
         case 'MemberExpression':
             //handle case like arr[j]
-            if (node.property.type=='BinaryExpression'){
-                //handle case like arr[j] > arr[j + 1]
-                throw new Error('Unsupported BinaryExpression');
-            }
             const name = node.object.name;
             if (cpp_generator.types[name]===undefined){
                 //TODO: it maybe function param
