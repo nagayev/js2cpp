@@ -30,10 +30,16 @@ fi
 i=$(($i+1));
 done
 
+bin_type="exe"
+if [[ $(uname) -eq "Linux" ]] 
+then
+bin_type="elf"
+fi
+
 for file in $(ls output/ | grep .cpp)
 do
-without_ext="${file%.cpp}"
-g++ output/$file -o output/$without_ext
+binary_ext="${file%.cpp}.${bin_type}"
+g++ output/$file -o output/$binary_ext
 # panic if something went wrong
 if [[ $? -gt 0 ]]
 then

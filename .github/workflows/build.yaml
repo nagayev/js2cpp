@@ -20,6 +20,20 @@ jobs:
     - name: 'Compiling'
       run: ./compile.sh
       shell: bash
+
+    - name: 'Running'
+      run: |
+       bin_type="exe"
+       if [[ $(uname) -eq "Linux" ]] 
+       then
+       bin_type="elf"
+       fi
+       for file in $(ls output/ | grep $bin_type)
+       do
+       log_ext="${file%.$bin_type}.log"
+       output/$file>$log_ext
+       done
+      shell: bash
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
