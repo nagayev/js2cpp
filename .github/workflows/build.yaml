@@ -42,7 +42,7 @@ jobs:
        for file in $(ls output/logs)
        do
        txt_ext="${file%.log}.txt"
-       diff output/logs/$file tests/expected/$txt_ext
+       diff output/logs/$file tests/correct/expected/$txt_ext
        if [[ $? -gt 0 ]]
        then
        exit 1
