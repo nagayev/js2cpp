@@ -1,5 +1,5 @@
 echo "Creating output"
-mkdir output
+mkdir -p output/logs
 cp -r stdlib output/stdlib
 
 echo "Compiling correct tests..."
@@ -12,6 +12,7 @@ cpp_ext="${file%.js}.cpp"
 echo Test $i/$all_tests
 node js2cpp.js tests/correct/$file  --output output/$cpp_ext
 i=$(($i+1));
+echo "Test $i was passed!"
 done
 
 echo "Compiling incorrect tests..."
@@ -21,11 +22,14 @@ i=1
 for file in $(ls tests/incorrect)
 do
 echo Test $i/$all_tests
-node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp #don't produce js_result.cpp
-# panic if something is ok
+#don't produce js_result.cpp and don't show errors
+node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp > /dev/null
+# panic if incorrect test was compiled
 if [[ $? -eq 0 ]]
 then
   exit 1
+else
+  echo "Test $i was passed!"
 fi
 i=$(($i+1));
 done

@@ -18,7 +18,7 @@ jobs:
       run: npm install
 
     - name: 'Compiling'
-      run: ./compile.sh
+      run: ./tests/compile.sh
       shell: bash
 
     - name: 'Running'
@@ -31,9 +31,22 @@ jobs:
        echo "bin_type is $bin_type"
        for file in $(ls output/ | grep $bin_type)
        do
-       log_ext="${file%.$bin_type}.log"
+       log_ext="logs/${file%.$bin_type}.log"
        output/$file>output/$log_ext
        echo "Log for $file saved as $log_ext"
+       done
+      shell: bash
+
+    - name: 'Check results'
+      run: | 
+       for file in $(ls output/logs)
+       do
+       txt_ext="${file%.log}.txt"
+       diff output/logs/$file tests/expected/$txt_ext
+       if [[ $? -gt 0 ]]
+       then
+       exit 1
+       fi 
        done
       shell: bash
     
