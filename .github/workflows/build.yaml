@@ -28,10 +28,12 @@ jobs:
        then
        bin_type="elf"
        fi
+       echo "bin_type is $bin_type"
        for file in $(ls output/ | grep $bin_type)
        do
        log_ext="${file%.$bin_type}.log"
-       output/$file>$log_ext
+       output/$file>output/$log_ext
+       echo "Log for $file saved as $log_ext"
        done
       shell: bash
     
