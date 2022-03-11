@@ -11,8 +11,8 @@ do
 cpp_ext="${file%.js}.cpp"
 echo Test $i/$all_tests
 node js2cpp.js tests/correct/$file  --output output/$cpp_ext
-i=$(($i+1));
 echo "Test $i was passed!"
+i=$(($i+1));
 done
 
 echo "Compiling incorrect tests..."

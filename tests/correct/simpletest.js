@@ -11,6 +11,7 @@ c = [4,5];
 b = c[0];
 console.log(a);
 console.log(b);
+console.log(c);
 console.log(boolean_var);
 //NOTE: we coudn't print c
 let i = 0;
