@@ -1,4 +1,5 @@
 node_modules/
+.vscode
 output/
 js_result.cpp
 test.js

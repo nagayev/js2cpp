@@ -7,9 +7,9 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
     if ( !v.empty() ) {
         out << '[';
         for(T a:v){
-            out<<a<<",";
+            out<<a<<',';
         }
-        out << "\b]"; // use ANSI backspace character '\b' to overwrite final ','
+        out << ']'; // use ANSI backspace character '\b' to overwrite final ','
     }
     return out;
 }
