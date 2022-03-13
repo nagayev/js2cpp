@@ -138,7 +138,9 @@ class CPPGenerator{
         for (let arg in func.args){
            code+=`${func.args[arg]} ${arg}, `; 
         }
-        if (func.args.length!==0) code=code.slice(0,code.length-2);
+        if (Object.keys(func.args).length!==0){
+            code=code.slice(0,code.length-2);
+        } 
         code+='){\n';
         code=code+func.code;
         code+='}\n';

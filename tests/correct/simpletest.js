@@ -1,7 +1,14 @@
 function test(){
     console.log('Function test was called');
 }
+function g(x,y){
+    console.log(x);
+    console.log(y);
+    return 1;
+}
 test();
+let r = 2;
+g(r,3);
 let a = 2;
 let b = 2;
 let boolean_var = false;
