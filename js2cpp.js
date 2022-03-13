@@ -12,6 +12,7 @@ const defaultArgs = {
     no_format:false
 };
 
+const makeString = (arr) => arr.join('');
 const parser = new ArgumentParser({});
 
 parser.add_argument("filename", {type:"str", help:"Input Javascript file"});
@@ -83,7 +84,8 @@ function JS_assert(value,message,CustomError = Error){
 
 const defaultOptions = {
     level:1,
-    locked:false //true if we want to ignore level
+    locked:false, //true if we want to ignore level
+    function_name:'' //string if we are parsing function's code
 };
 
 class CPPGenerator{
@@ -92,6 +94,7 @@ class CPPGenerator{
         this._cpp = ""; //cpp code
         this.types = {}; //types of js variables
         this.functions={}; //functions arguments' types
+        this.functions_code = "";
         this._modules = new Set(['<iostream>']); //cpp includes
         this.options = defaultOptions; //options like formating
         this._filename = filename; //output filename
@@ -106,24 +109,53 @@ class CPPGenerator{
     addCode(code){
         const options = this.options;
         const spaces = this._getSpacesByLevel(options.level);
-        this._cpp += `${spaces}${code};\n`;
+        const result_code = `${spaces}${code};\n`
+        if (options.function_name!==''){
+            this.functions[options.function_name].code+=result_code;
+        }
+        else {
+            this._cpp += result_code;
+        }
     }
     
-    /*buildFunction(name){
+    deleteTralingComma(l=1){
+        if (!this.options.function_name){
+            this._cpp = this._cpp.slice(0,-l);
+        }
+        
+        else{
+            this.functions[this.options.function_name].code=this.functions[this.options.function_name].code.slice(0,-l);
+        }
+    }
+
+    _buildFunction(name){
         const func = this.functions[name];
+        cpp_generator.options.function_name=name;
+        incrementIndent();
+        parse_node(func.node.body);
+        decrementIndent();
         let code = `${func.ret} ${name}(`;
         for (let arg in func.args){
            code+=`${func.args[arg]} ${arg}, `; 
         }
+        if (func.args.length!==0) code=code.slice(0,code.length-2);
         code+='){\n';
-        code+=func.code;
-        code+='}';
-    }*/
+        code=code+func.code;
+        code+='}\n';
+        cpp_generator.options.function_name='';
+        this.functions_code += code;
+    }
     
     addRaw(code){
         const options = this.options;
         const spaces = this._getSpacesByLevel(options.level);
-        this._cpp += `${spaces}${code}`;
+        const result_code = `${spaces}${code}`;
+        if (options.function_name!==''){
+            this.functions[options.function_name].code+=result_code;
+        }
+        else {
+            this._cpp += result_code;
+        }
     }
     
     addImport(module){
@@ -131,15 +163,15 @@ class CPPGenerator{
     }
     
     save(){
-        //add prolog
+        //The program consists of several parts: prolog, user defined functions and the main code
         let prolog = '//Auto generated code using js2cpp\n';
-        const epilog = 'return 0;\n}';
         for(module of this._modules){
           prolog+=`#include ${module}\n`;
         } 
         prolog+="using namespace std;\n";
-        prolog+="int main(){\n";
-        this._cpp = prolog + this._cpp + epilog;
+        const start_main = "int main(){\n";
+        const epilog = 'return 0;\n}';
+        this._cpp = prolog + this.functions_code + start_main + this._cpp + epilog;
         fs.writeFileSync(this._filename,this._cpp);
     }
     
@@ -267,7 +299,7 @@ function parse_node(node){
             }
             if (elements.length!==0){
                 //delete traling ,
-                cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+                cpp_generator.deleteTralingComma(1);
             }
             cpp_generator.addRaw('}');
             break;
@@ -280,7 +312,7 @@ function parse_node(node){
         case 'VariableDeclaration':
             const variable = node.declarations[0].id.name;
             if (node.kind==='const') cpp_generator.addRaw('const ');
-            type = getExpressionType(node.declarations[0].init);
+            let type = getExpressionType(node.declarations[0].init);
             cpp_generator.types[variable]=type;
             cpp_generator.addRaw(`${type} `);
             parse_node(node.declarations[0].id);
@@ -289,24 +321,14 @@ function parse_node(node){
             cpp_generator.addCode('');
             break;
         case 'FunctionDeclaration':
+            //NOTE: we parse function's body when user calles function first time
             JS_assert(!node.async,'We don\'t support async functions');
             JS_assert(!node.generator,'We don\'t support generators');
             const function_name = node.id.name;
-            cpp_generator.functions[function_name]={args:{},}; //ret:'void',code:''
-            cpp_generator.addRaw(`auto ${node.id.name}=[](`);
+            cpp_generator.functions[function_name]={args:{},ret:'void',code:'',node:node};
             for (param of node.params){
                 cpp_generator.functions[function_name].args[param.name]=''; //unknown type
-                parse_node(param);
-                cpp_generator.addRaw(', ');
             }
-            if (node.params.length!==0){
-                cpp_generator._cpp=cpp_generator._cpp.slice(0,-2);
-            }
-            cpp_generator.addRaw('){\n');
-            incrementIndent();
-            parse_node(node.body);
-            decrementIndent();
-            cpp_generator.addCode(`}`);
             break;
         case 'Identifier':
             cpp_generator.addRaw(node.name);
@@ -328,11 +350,9 @@ function parse_node(node){
         case 'ExpressionStatement':
             const expr = node.expression;
             if (expr.type == 'CallExpression'){
-                //handle something like Math.cos(0);
                 let function_name;
                 if (expr.callee.type=='MemberExpression'){
-                    //method of an object
-                    //const object = expr.callee.object;
+                    //handle something like Math.cos(0);
                     const module_name = expr.callee.object.name; //f.g console
                     function_name = expr.callee.property.name; //f.g log
                     cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
@@ -340,33 +360,52 @@ function parse_node(node){
                     if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) slash="/";
                     cpp_generator.addImport(`"${args.stdlib}${slash}${module_name}/${function_name}.h"`); //#include "console/log.h"
                 }
-                //handle something like test(1);
+                //handle something like test(1), without object like console;
                 else if (expr.callee.type=='Identifier'){
                     function_name = expr.callee.name;
                     cpp_generator.addRaw(`${function_name}(`);
                 }
+                //NOTE: maybe this else is unreachable
+                else {
+                    throw new Error('Invalid function call');
+                }
+
                 let i = 0;
                 const func = cpp_generator.functions[function_name];
                 const argumentsNames = func?Object.keys(func.args):[]; //function f(a,b) -> ['a','b']
                 lockIndent();
                 for (argument of expr.arguments){
                     if (func!==undefined){
-                        //if it's user defined function
+                        //if it's user defined function, not console.log
                         const argumentName = argumentsNames[i];
-                        const type = getExpressionType(argument);
-                        const message = `Invalid typeof argument ${argumentName}, expected: ${func.args[argumentName]}, actual: ${type}`;
-                        JS_type_assert(func.args[argumentName]!='' && type!=func.args[argumentName],message);
+                        let type;
+                        //if it's variable it should be defined
+                        if (argument.type==='Identifier'){
+                            type = getVariableType(argument);
+                            JS_type_assert(type!==undefined,`Variable ${argument.name} is undefined`);
+                        } 
+                        else type = getExpressionType(argument);
+                        //check typeOf argument if it was defined
+                        if (func.args[argumentName]!==''){
+                            const message = makeString([`Invalid typeof argument ${argumentName},`,
+                            `expected: ${func.args[argumentName]}, actual: ${type}`]);
+                            JS_type_assert(type===func.args[argumentName],message);
+                        }
                         func.args[argumentName]=type;
                     }
                     parse_node(argument);
                     cpp_generator.addRaw(', ');
                     i++;
                 }
-                if (expr.arguments.length!==0){
+                if (expr.arguments.length>0){
                     //delete traling ,
-                    cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-2); //2 because , and space
+                    cpp_generator.deleteTralingComma(2);
                 }
                 cpp_generator.addCode(')');
+                //Parse function's body if it's user-defined function (not console.log) and was called first time
+                if (func!==undefined && func.code===''){
+                    cpp_generator._buildFunction(function_name);
+                }
                 unlockIndent();
             }
             else if (expr.type=='AssignmentExpression'){
@@ -432,7 +471,7 @@ function parse_node(node){
             if (node.init!==null){
                 parse_node(node.init);
                 //FIXME: hack for delete last \n
-                cpp_generator._cpp = cpp_generator._cpp.substr(0,cpp_generator._cpp.length-1);
+                cpp_generator.deleteTralingComma(1);
             }
             else {
                 cpp_generator.addRaw(';');
@@ -460,7 +499,14 @@ function parse_node(node){
             cpp_generator.addRaw(']');
             break;
         case 'ReturnStatement':
-            throw new Error('We haven\'t support returning value yet');
+            const return_type = getExpressionType(node.argument);
+            const func_name = cpp_generator.options.function_name; 
+            cpp_generator.functions[func_name].ret=return_type;
+            cpp_generator.addRaw('return ');
+            lockIndent();
+            parse_node(node.argument);
+            cpp_generator.addCode('');
+            unlockIndent();
             break;
         default:
             console.log(node);
