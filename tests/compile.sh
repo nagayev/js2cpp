@@ -1,6 +1,6 @@
 echo "Creating output"
 mkdir -p output/logs
-cp -r stdlib output/stdlib
+cp -r src/stdlib output/stdlib
 
 echo "Compiling correct tests..."
 
