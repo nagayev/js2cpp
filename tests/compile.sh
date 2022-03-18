@@ -10,7 +10,7 @@ for file in $(ls tests/correct)
 do
 cpp_ext="${file%.js}.cpp"
 echo Test $i/$all_tests
-node js2cpp.js tests/correct/$file  --output output/$cpp_ext
+node js2cpp.js tests/correct/$file  --output output/$cpp_ext --stdlib ./stdlib
 echo "Test $i was passed!"
 i=$(($i+1));
 done
@@ -23,7 +23,7 @@ for file in $(ls tests/incorrect)
 do
 echo Test $i/$all_tests
 #don't produce js_result.cpp and don't show errors
-node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp > /dev/null
+node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp --stdlib ./stdlib > /dev/null
 # panic if incorrect test was compiled
 if [[ $? -eq 0 ]]
 then
