@@ -327,6 +327,23 @@ function parse_node(node){
             decrementIndent();
             cpp_generator.addRaw('}\n');
             break;
+        case 'WhileStatement':
+            cpp_generator.addRaw('while (');
+            parse_node(node.test);
+            cpp_generator.addRaw('){\n');
+            incrementIndent();
+            parse_node(node.body);
+            decrementIndent();
+            cpp_generator.addRaw('}\n');
+            break;
+        case 'BreakStatement':
+            JS_assert(node.label===null,"We don't support break with label");
+            cpp_generator.addCode('break');
+            break;
+        case 'ContinueStatement':
+            JS_assert(node.label===null,"We don't support continue with label");
+            cpp_generator.addCode('continue');
+            break;
         case 'MemberExpression':
             //handle case like arr[j]
             const name = node.object.name;
