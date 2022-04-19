@@ -55,8 +55,20 @@ jobs:
        done
       shell: bash
     
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+    - name: Upload artifact full
+      uses: actions/upload-artifact@v3
       with:
-         name: output
+         name: full
          path: output
+       
+    - name: Upload artifact exe
+      uses: actions/upload-artifact@v3
+      with:
+         name: exe
+         path: output/*.exe
+       
+    - name: Upload artifact elf
+      uses: actions/upload-artifact@v3
+      with:
+         name: elf
+         path: output/*.elf
