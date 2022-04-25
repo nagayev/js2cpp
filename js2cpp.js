@@ -137,6 +137,19 @@ function getVariableType(node){
 
 //TODO: move parsing to several modules
 function parse_node(node){
+    //parse // or /* 
+    if (node.leadingComments){
+        let start, end;
+        for(let commentary of node.leadingComments){
+            start = "//";
+            end = "";
+            if (commentary.type==="CommentBlock"){
+                start = "/*";
+                end = "*/";
+            }
+            cpp_generator.addRaw(`${start}${commentary.value}${end}\n`);
+        }
+    }
     switch(node.type){
         case 'NumericLiteral':
             cpp_generator.addRaw(`${node.value}`);
