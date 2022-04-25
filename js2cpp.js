@@ -82,9 +82,24 @@ function getExpressionType(node,anotherNode){
             }
             break;
         case 'BinaryExpression':
+            let leftType,rightType;
+            leftType = getExpressionType(node.left);
+            rightType = getExpressionType(node.right);
             const comparasionOperators = ['>','<','>=','<=','!=','=='];
+            const arithOperators = ['+','-','*','/','**'];
+            //const logicOperators = ['|','&','<<','>>','>>>'];
+            //TODO: hack
+            const isNumberType = (type) => type === 'int64_t' || type=='float';
+            if (!isNumberType(leftType) || !isNumberType(rightType)) {
+                JS_type_assert(false,`You can apply binary operation ${node.operator} only to numbers`);
+            }
             if (comparasionOperators.includes(node.operator)){
                 ctype = "bool";
+            }
+            else if (arithOperators.includes(node.operator)){
+                JS_assert(leftType===rightType,"Invalid operator usage: both arguments should have the same type");
+                //console.log("You coudn't use syntax like 2+\"abc\"");
+                ctype=leftType;
             }
             else{
                 throw new Error('Unknown BinaryExpression');
@@ -147,6 +162,7 @@ function parse_node(node){
             break;
         case 'BinaryExpression':
             //something like a>5 or 1!=2
+            if (node.operator==="**") throw new Error("Unsupported operator **");
             parse_node(node.left);
             cpp_generator.addRaw(node.operator);
             parse_node(node.right);
