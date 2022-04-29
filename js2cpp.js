@@ -499,6 +499,33 @@ function parse_node(node){
             parse_node(node.property);
             cpp_generator.addRaw(close);
             break;
+        case 'TryStatement':
+            cpp_generator.addImport(`"${args.stdlib}/errors.h"`);
+            let hasClause = false;
+            if (node.handler.param!==null){
+                hasClause = true;
+            }
+            if(hasClause){
+                JS_assert(false,'We don\'t support catch clause');
+                //cpp_generator.addRaw('');
+            }
+            cpp_generator.addRaw('JS_try{\n');
+            incrementIndent();
+            cpp_generator.addCode('HANDLE_ERRORS()');
+            parse_node(node.block);
+            decrementIndent();
+            cpp_generator.addRaw('}\n');
+            let platformSpecificClause = '...';
+            if (process.platform === "win32") {
+                //NOTE: we don't need to import windows.h because it included in 'errors.h'
+                platformSpecificClause = "EXCEPTION_EXECUTE_HANDLER";
+            }
+            cpp_generator.addRaw(`JS_catch(${platformSpecificClause}){\n`);
+            incrementIndent();
+            parse_node(node.handler.body);
+            decrementIndent();
+            cpp_generator.addRaw('}\n');
+            break;
             break;
         case 'ReturnStatement':
             const return_type = getExpressionType(node.argument);
