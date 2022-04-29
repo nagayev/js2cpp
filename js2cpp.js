@@ -41,6 +41,9 @@ function getExpressionType(node,anotherNode){
         case 'StringLiteral':
             ctype="string";
             break;
+        case 'TemplateLiteral':
+            ctype="string";
+            break;
         case 'ArrayExpression':
             const elements = node.elements;
             const first_element = elements[0]; 
@@ -176,6 +179,35 @@ function parse_node(node){
             break;
         case 'BooleanLiteral':
             cpp_generator.addRaw(`${node.value}`);
+            break;
+        case 'TemplateLiteral':
+            cpp_generator.addImport(`"${args.stdlib}/string_format.h"`);
+            let rawString = `std::format("`;
+            let formaters = [];
+            function compare(a, b) {
+                if (a.start<b.start) {
+                    return -1;
+                }
+                if (a.start>b.start) {
+                    return 1;
+                }
+                return 0;
+            }
+
+            const mergedArray = node.expressions.concat(node.quasis);
+            mergedArray.sort(compare);
+            for (element of mergedArray) {
+                if (element.tail!==undefined) {
+                    rawString+=element.value.raw;
+                }
+                else {
+                    rawString+=`{}`;
+                    formaters.push(element.name);
+                }
+            }
+            
+            rawString = `${rawString}",${formaters.join()})`;
+            cpp_generator.addRaw(rawString);
             break;
         case 'ArrayExpression':
             const elements = node.elements;
