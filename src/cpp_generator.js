@@ -103,6 +103,9 @@ class CPPGenerator{
     save(){
         //The program consists of several parts: prolog, user defined functions and the main code
         let prolog = '//Auto generated code using js2cpp\n';
+        if (args.sort_imports) {
+            this._modules = Array(...this._modules).sort();
+        }
         for(module of this._modules){
           prolog+=`#include ${module}\n`;
         } 
