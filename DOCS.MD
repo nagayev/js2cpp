@@ -2,12 +2,31 @@
 
 ## File Structure
 
-The main file is `js2cpp.js`
+We have two different types of source files: Javascript sources and C++
+
+Javascript files
+| File             | Purpose                       |
+|------------------|-------------------------------|
+| js2cpp.js        | The main file                 |
+| args.js          | Command-line argument parser  |
+| utils.js         | Utils like JS_assert          |
+| cpp_generator.js | Provides cpp_generator object |
+
+C++ files located at src/stdlib
+Javascript files
+| File             | Purpose                               |
+|------------------|---------------------------------------|
+| array.h          | Realisation of the Javascript Array   |
+| builtins.h       | builtins functions like parseInt      |
+| console.h        | Console object                        |
+| math.h           | Math object                           |
+| types.h          | Javascript type aliases (like JS_bool)|
 
 ## Tests
 
-We have two tests - `correct.js` and `incorrect.js`.
-We compiled it using Github Actions.
+We have two types of tests - `correct` tests and `incorrect`.  
+Incorrect tests means we test compiler on wrong code samples.  
+We compiled them using Github Actions.
 
 ## Depedencies
 
