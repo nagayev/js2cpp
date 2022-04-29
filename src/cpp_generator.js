@@ -1,17 +1,12 @@
 const fs = require('fs');
 const args = require('./args');
 
-const lockIndent = () => cpp_generator.options.locked = true;
-const unlockIndent = () => cpp_generator.options.locked = false;
+const incrementIndent = () =>  cpp_generator.options.indentLevel++;
+const decrementIndent = () => cpp_generator.options.indentLevel--;
 
-const incrementIndent = () =>  cpp_generator.options.level++;
-const decrementIndent = () => {
-    cpp_generator.options.level--;
-    unlockIndent();
-}
 
 const defaultOptions = {
-    level:1,
+    indentLevel:1,
     locked:false, //true if we want to ignore level
     function_name:'' //string if we are parsing function's code
 };
@@ -30,13 +25,14 @@ class CPPGenerator{
 
     _getSpacesByLevel(level){
         //3 spaces for level 2, 6 for level 3
-        if (this.options.locked || args.no_format) return '';
+        const lastChar = this._cpp[this._cpp.length-1];
+        if (lastChar!='\n' || this.options.locked || args.no_format) return '';
         return ' '.repeat(3*(level-1));
     }
     
     addCode(code){
         const options = this.options;
-        const spaces = this._getSpacesByLevel(options.level);
+        const spaces = this._getSpacesByLevel(options.indentLevel);
         const result_code = `${spaces}${code};\n`
         if (options.function_name!==''){
             this.functions[options.function_name].code+=result_code;
@@ -78,7 +74,7 @@ class CPPGenerator{
     
     addRaw(code){
         const options = this.options;
-        const spaces = this._getSpacesByLevel(options.level);
+        const spaces = this._getSpacesByLevel(options.indentLevel);
         const result_code = `${spaces}${code}`;
         if (options.function_name!==''){
             this.functions[options.function_name].code+=result_code;
@@ -111,5 +107,5 @@ const cpp_generator = new CPPGenerator(args.output);
 
 module.exports = (parse_node)=>{
     cpp_generator.__parse_node__ = parse_node;
-    return {cpp_generator,lockIndent,unlockIndent,incrementIndent,decrementIndent};
+    return {cpp_generator,incrementIndent,decrementIndent};
 };

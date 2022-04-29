@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const {parse} = require("@babel/parser");
 const args = require('./src/args');
-const {cpp_generator,lockIndent,unlockIndent,incrementIndent,decrementIndent} = require('./src/cpp_generator')(parse_node);
+const {cpp_generator,incrementIndent,decrementIndent} = require('./src/cpp_generator')(parse_node);
 const {makeString, JS_assert, JS_type_assert} = require('./src/utils');
 
 let jscode,ast;
@@ -244,7 +244,6 @@ function parse_node(node){
                 let i = 0;
                 const func = cpp_generator.functions[function_name];
                 const argumentsNames = func?Object.keys(func.args):[]; //function f(a,b) -> ['a','b']
-                lockIndent();
                 for (argument of expr.arguments){
                     if (func!==undefined){
                         //if it's user defined function, not console.log
@@ -277,7 +276,6 @@ function parse_node(node){
                 if (func!==undefined && func.code===''){
                     cpp_generator._buildFunction(function_name);
                 }
-                unlockIndent();
             }
             else if (expr.type=='AssignmentExpression'){
                 //MemberExpression arr[j] = something;
@@ -391,10 +389,8 @@ function parse_node(node){
             const func_name = cpp_generator.options.function_name; 
             cpp_generator.functions[func_name].ret=return_type;
             cpp_generator.addRaw('return ');
-            lockIndent();
             parse_node(node.argument);
             cpp_generator.addCode('');
-            unlockIndent();
             break;
         default:
             console.log(node);
