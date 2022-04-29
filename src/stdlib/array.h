@@ -1,4 +1,6 @@
+#pragma once
 #include <vector>
+#include <stdexcept>
 
 using namespace std;
 
@@ -39,7 +41,7 @@ class JS_Array{
     }
     T operator[] (int index) {
         if (index < 0 || index >= data.size()) {
-            return T();
+            throw std::invalid_argument("Invalid index");
         }
         return data[index];
     }

@@ -1,8 +1,8 @@
+#pragma once
 //JavaScript types
 
 #include <string>
 #include <map>
-//#include <vector>
 #include "array.h"
 
 //Primitives
@@ -16,4 +16,5 @@ typedef std::string JS_string;
 //Complex types
 
 #define JS_array JS_Array
+//TODO:
 #define JS_object std::map

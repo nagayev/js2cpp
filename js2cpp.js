@@ -46,13 +46,16 @@ function getExpressionType(node,anotherNode){
             const first_element = elements[0]; 
             const message = 'You coudn\'t declare empty array: we don\'t know it\'s type';
             JS_type_assert(first_element!==undefined,message);
-            const first_type = first_element.type;
-            const isEqual = (element) => {
+            let first_type = first_element.type;
+            //if (first_type==='Identifier') first_type = getVariableType(first_element);
+            const hasOneType = (element) => {
+                //if (element.type==='Identifier') element.type = getVariableType(element);
+                //else element.type = getExpressionType(element);
                 return element.type == first_type; 
             }
-            JS_type_assert(elements.every(isEqual),'array\'s elements must be not heterogeneous');
-            ctype = `vector<${getExpressionType(first_element)}>`;
-            cpp_generator.addImport('<vector>');
+            JS_type_assert(elements.every(hasOneType),'array\'s elements must be not heterogeneous');
+            ctype = `JS_Array<${getExpressionType(first_element)}>`;
+            cpp_generator.addImport(`"${args.stdlib}/array.h"`);
             break;
         case 'ObjectExpression':
             throw new Error('Unsopperted type: object!');
@@ -64,6 +67,10 @@ function getExpressionType(node,anotherNode){
             throw new Error('We coudn\'t understood function\'s returning type');
             break;
         case 'MemberExpression':
+            if(!node.computed){
+                ctype = getVariableType(node);
+                break;
+            }
             const typeOfArray = getVariableType(node.object.name); //something like vector<int64_t>
             const typeOfElement = getTypeOfElements(typeOfArray); //int64_t
             let typeOfLeft;
@@ -122,7 +129,13 @@ function getVariableType(node){
     if (typeof node==='string') return cpp_generator.types[node];
     switch (node.type){
         case 'MemberExpression':
-            //TODO: test it
+            //FIXME: We will have problems with something like Math['E']
+            if (!node.computed){
+                //for cases like Math.E
+                const type = cpp_generator.types[node.object.name][node.property.name]; 
+                if (type===undefined) JS_type_assert(false,'We coudn\'t understood type');
+                return type;
+            }
             ctype=getVariableType(node.object.name);
             ctype=getTypeOfElements(ctype);
             break;
@@ -224,12 +237,8 @@ function parse_node(node){
                 let function_name;
                 if (expr.callee.type=='MemberExpression'){
                     //handle something like Math.cos(0);
-                    const module_name = expr.callee.object.name; //f.g console
-                    function_name = expr.callee.property.name; //f.g log
-                    cpp_generator.addRaw(`JS_${module_name.toLowerCase()}_${function_name.toLowerCase()}(`); //JS_console_log(
-                    let slash = "";
-                    if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) slash="/";
-                    cpp_generator.addImport(`"${args.stdlib}${slash}${module_name}/${function_name}.h"`); //#include "console/log.h"
+                    parse_node(expr.callee);
+                    cpp_generator.addRaw('(');
                 }
                 //handle something like test(1), without object like console;
                 else if (expr.callee.type=='Identifier'){
@@ -372,12 +381,26 @@ function parse_node(node){
             cpp_generator.addCode('continue');
             break;
         case 'MemberExpression':
-            //handle case like arr[j]
+            //handle case like arr[j] or Math.E
+            let open,close;
+            open = "[";
+            close = "]";
             const name = node.object.name;
+            const standartObjects = ["console","math"]; //TODO: move this
+            if (standartObjects.includes(node.object.name)){
+                let slash = "";
+                if (args.stdlib!=='' && !args.stdlib.endsWith('\\')) slash="/";
+                cpp_generator.addImport(`"${args.stdlib}${slash}${node.object.name}.h"`);
+            }
             if (cpp_generator.types[name]===undefined){
                 //TODO: it maybe function param
                 //throw new Error(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
-                console.warn(`Variable ${name} isn't declared, couldn't use ${name}[something]`);
+                console.warn(`Variable isn't declared, use object ${name} carefully`);
+            }
+            if (!node.computed) {
+                //object.property, not object['property']
+                open = ".";
+                close = "";
             }
             parse_node(node.object);
             cpp_generator.addRaw('[');

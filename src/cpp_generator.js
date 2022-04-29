@@ -18,7 +18,7 @@ class CPPGenerator{
         this.types = {}; //types of js variables
         this.functions={}; //functions arguments' types
         this.functions_code = "";
-        this._modules = new Set(['<iostream>']); //cpp includes
+        this._modules = new Set(['<iostream>',`"${args.stdlib}/builtins.h"`]); //cpp includes
         this.options = defaultOptions; //options like formating
         this._filename = filename; //output filename
     }

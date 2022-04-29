@@ -20,6 +20,10 @@ struct WindowCls{
         if (b) return "true";
         return "false";
     }
+    JS_string __to_string__(const char* s){
+        std::string str(s);
+        return str;
+    }
     JS_string __to_string__(JS_string s){
         return s;
     }
@@ -37,28 +41,6 @@ struct WindowCls{
         s.pop_back();
         return s;
     }
-    //__to_boolean
-    /*JS_boolean __to_boolean__(JS_int i){
-        if (i==0) return false;
-        return true;
-    }
-    JS_boolean __to_boolean__(JS_float f){
-        return __to_boolean__((int)f);
-    }
-    JS_boolean __to_boolean__(JS_boolean b){
-        return b;
-    }
-    JS_boolean __to_boolean__(JS_string s){
-        if (s=="") return false;
-        return true;
-    }
-    template<typename T>
-    JS_boolean __to_boolean__(JS_array<T> arr){
-        if (arr.size()==0){
-            return false;
-        }
-        return true;
-    }*/
     template<typename T>
     JS_boolean __to_boolean__(T something){
         JS_string s = this->__to_string__(something);
@@ -89,15 +71,6 @@ JS_boolean isNaN(JS_float x){
 
 JS_boolean isFinite(JS_float x){
     return !(isnan(x) || isinf(x));
-}
-
-template<typename ... Args>
-std::string string_format( const std::string& format, Args ... args )
-{
-    int size = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
-    char* buf =  new char[size];
-    std::snprintf(buf, size, format.c_str(), args ... );
-    return std::string(buf, buf + size - 1 ); // We don't want the '\0' inside
 }
 
 template<typename T>
