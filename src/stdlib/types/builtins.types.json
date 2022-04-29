@@ -1,0 +1,7 @@
+{
+    "parseFloat":"float",
+    "parseInt":"int64_t",
+    "eval":"int64_t",
+    "isNaN":"bool",
+    "isFinite":"bool"
+} 

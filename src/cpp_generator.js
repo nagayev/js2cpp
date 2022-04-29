@@ -11,11 +11,23 @@ const defaultOptions = {
     function_name:'' //string if we are parsing function's code
 };
 
+//gets types for default Objects like console
+function getDefaultTypes(){
+    let types = {};
+    const standartModules = fs.readdirSync(`${args.stdlib}/types`);
+    const files = standartModules.map((module)=>`${args.stdlib}/types/${module}`);
+    for (file of files) {
+       const content = fs.readFileSync(file);
+       Object.assign(types,JSON.parse(content));
+    }
+    return types;
+}
+
 class CPPGenerator{
     
     constructor(filename='js_result.cpp'){
         this._cpp = ""; //cpp code
-        this.types = {}; //types of js variables
+        this.types = getDefaultTypes(); //types of js variables
         this.functions={}; //functions arguments' types
         this.functions_code = "";
         this._modules = new Set(['<iostream>',`"${args.stdlib}/builtins.h"`]); //cpp includes

@@ -64,7 +64,11 @@ function getExpressionType(node,anotherNode){
             break;
         case 'CallExpression':
             //console.log(node);
-            throw new Error('We coudn\'t understood function\'s returning type');
+            ctype = cpp_generator.types[node.callee.name];
+            if (ctype===undefined){
+                throw new Error('Unsuported operation CallExpression');
+                //ctype = cpp_generator.functions[node.callee.name].ret;
+            } 
             break;
         case 'MemberExpression':
             if(!node.computed){
@@ -217,6 +221,62 @@ function parse_node(node){
         case 'Identifier':
             cpp_generator.addRaw(node.name);
             break;
+        case 'CallExpression':
+            //FIXME:
+            let func_name;
+            if (node.callee.type=='MemberExpression'){
+                //handle something like Math.cos(0);
+                parse_node(node.callee);
+                cpp_generator.addRaw('(');
+            }
+            //handle something like test(1), without object like console;
+            else if (node.callee.type=='Identifier'){
+                func_name = node.callee.name;
+                cpp_generator.addRaw(`${func_name}(`);
+            }
+
+            let i = 0;
+            const func = cpp_generator.functions[func_name];
+            const argumentsNames = func?Object.keys(func.args):[]; //function f(a,b) -> ['a','b']
+            for (argument of node.arguments){
+                if (func!==undefined){
+                    //if it's user defined function, not console.log
+                    const argumentName = argumentsNames[i];
+                    let type;
+                    //if it's variable it should be defined
+                    if (argument.type==='Identifier'){
+                        type = getVariableType(argument);
+                        JS_type_assert(type!==undefined,`Variable ${argument.name} is undefined`);
+                    } 
+                    else type = getExpressionType(argument);
+                    //check typeOf argument if it was defined
+                    if (func.args[argumentName]!==''){
+                        let message;
+                        if (argumentName===undefined){
+                            message = `Too many arguments to function ${func_name}`;
+                        }
+                        else {
+                            message = makeString([`Invalid typeof argument ${argumentName},`,
+                        `expected: ${func.args[argumentName]}, actual: ${type}`]);
+                        }
+                        JS_type_assert(type===func.args[argumentName],message);
+                    }
+                    func.args[argumentName]=type;
+                }
+                parse_node(argument);
+                cpp_generator.addRaw(', ');
+                i++;
+            }
+            if (node.arguments.length>0){
+                //delete traling ,
+                cpp_generator.deleteTralingComma(2);
+            }
+            cpp_generator.addCode(')');
+            //Parse function's body if it's user-defined function (not console.log) and was called first time
+            if (func!==undefined && func.code===''){
+                cpp_generator._buildFunction(func_name);
+            }
+            break;
         case 'UpdateExpression':
             //something like i++
             if (node.prefix) {
@@ -234,7 +294,12 @@ function parse_node(node){
         case 'ExpressionStatement':
             const expr = node.expression;
             if (expr.type == 'CallExpression'){
+                //FIXME:
+                //console.log(expr.callee);
                 let function_name;
+                //function_name = "f";
+                //parse_node(expr.callee);
+                
                 if (expr.callee.type=='MemberExpression'){
                     //handle something like Math.cos(0);
                     parse_node(expr.callee);
@@ -244,10 +309,6 @@ function parse_node(node){
                 else if (expr.callee.type=='Identifier'){
                     function_name = expr.callee.name;
                     cpp_generator.addRaw(`${function_name}(`);
-                }
-                //NOTE: maybe this else is unreachable
-                else {
-                    throw new Error('Invalid function call');
                 }
 
                 let i = 0;
@@ -344,7 +405,6 @@ function parse_node(node){
             } 
             break;
         case 'ForStatement':
-            //init,test,update,body
             cpp_generator.addRaw('for (');
             if (node.init!==null){
                 parse_node(node.init);
@@ -403,9 +463,10 @@ function parse_node(node){
                 close = "";
             }
             parse_node(node.object);
-            cpp_generator.addRaw('[');
+            cpp_generator.addRaw(open);
             parse_node(node.property);
-            cpp_generator.addRaw(']');
+            cpp_generator.addRaw(close);
+            break;
             break;
         case 'ReturnStatement':
             const return_type = getExpressionType(node.argument);
