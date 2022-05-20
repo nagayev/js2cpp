@@ -7,12 +7,11 @@ const decrementIndent = () => cpp_generator.options.indentLevel--;
 
 const defaultOptions = {
     indentLevel:1,
-    locked:false, //true if we want to ignore level
     function_name:'' //string if we are parsing function's code
 };
 
 //gets types for default Objects like console
-function getDefaultTypes(){
+function _getDefaultTypes(){
     let types = {};
     const standartModules = fs.readdirSync(`${args.stdlib}/types`);
     const files = standartModules.map((module)=>`${args.stdlib}/types/${module}`);
@@ -27,9 +26,7 @@ class CPPGenerator{
     
     constructor(filename='js_result.cpp'){
         this._cpp = ""; //cpp code
-        this.types = getDefaultTypes(); //types of js variables
-        this.functions={}; //functions arguments' types
-        this.functions_code = "";
+        this.types = _getDefaultTypes(); //types of js variables
         this._modules = new Set(['<iostream>',`"${args.stdlib}/builtins.h"`]); //cpp includes
         this.options = defaultOptions; //options like formating
         this._filename = filename; //output filename
@@ -37,9 +34,10 @@ class CPPGenerator{
 
     _getSpacesByLevel(level){
         //3 spaces for level 2, 6 for level 3
-        const lastChar = this._cpp[this._cpp.length-1];
+        const SPACE = ' ';
+        const SPACES_PER_LEVEL = 3;
         if (lastChar!='\n' || this.options.locked || args.no_format) return '';
-        return ' '.repeat(3*(level-1));
+        return SPACE.repeat(SPACES_PER_LEVEL*(level-1));
     }
     
     addCode(code){

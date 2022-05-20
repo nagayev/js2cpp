@@ -1,6 +1,10 @@
-//js2cpp test.js -s stdlib -o output/js_bin --cpp
-const fs = require('fs');
+function enableColorfulDebug(){
+    require('./src/color');
+}
 
+enableColorfulDebug();
+
+const fs = require('fs');
 const {parse} = require("@babel/parser");
 const args = require('./src/args');
 const {cpp_generator,incrementIndent,decrementIndent} = require('./src/cpp_generator')(parse_node);
@@ -46,7 +50,7 @@ function getExpressionType(node,anotherNode){
             break;
         case 'ArrayExpression':
             const elements = node.elements;
-            const first_element = elements[0]; 
+            const first_element = elements[0];
             const message = 'You coudn\'t declare empty array: we don\'t know it\'s type';
             JS_type_assert(first_element!==undefined,message);
             let first_type = first_element.type;
@@ -383,17 +387,17 @@ function parse_node(node){
                 //MemberExpression arr[j] = something;
                 const isVariable = (expr) => expr.type==='Identifier' || expr.type==='MemberExpression';
                 const oneVariable = isVariable(expr.left) && !isVariable(expr.right);
-                const variable = expr.left.name || 'JS_undefined';
+                const variable = expr.left.name;
                 let leftType = getVariableType(expr.left);
                 let rightType;
-                if(oneVariable){
+                if (oneVariable){
                     //something like a = 5;
                     //left is passed for case like b = a[0]
                     //we need both of variable names (b and a)
                     rightType = getExpressionType(expr.right,expr.left); 
                     const message = `Varible ${variable} has already declared with type ${cpp_generator.types[variable]}`;
                     JS_type_assert(leftType===rightType,message);
-                    cpp_generator.addRaw(`${expr.left.name} = `);
+                    cpp_generator.addRaw(`${expr.left.name} ${expr.operator} `);
                     parse_node(expr.right);
                     cpp_generator.addRaw(';\n');
                 }
@@ -405,7 +409,7 @@ function parse_node(node){
                         //throw new TypeError(`Variable ${variable} has type ${leftType}, not ${rightType}`);
                     }
                     parse_node(expr.left);
-                    cpp_generator.addRaw('=');
+                    cpp_generator.addRaw(expr.operator);
                     parse_node(expr.right);
                     cpp_generator.addCode('');
                 }
@@ -417,8 +421,9 @@ function parse_node(node){
             }
             break;
         case 'IfStatement':
-            if (node.consequent.body.length===0){
+            if (node.consequent.type=="BlockStatement" &&  node.consequent.body.length===0){
                 //skip if with empty body
+                console.log('[INFO] Skip if with empty body');
                 break;
             }
             cpp_generator.addRaw('if (');
@@ -440,7 +445,7 @@ function parse_node(node){
             cpp_generator.addRaw('for (');
             if (node.init!==null){
                 parse_node(node.init);
-                //FIXME: hack for delete last \n
+                //NOTE: hack for deleting last \n
                 cpp_generator.deleteTralingComma(1);
             }
             else {
