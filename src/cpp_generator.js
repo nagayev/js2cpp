@@ -22,11 +22,22 @@ function _getDefaultTypes(){
     return types;
 }
 
+function _getStdObjects(types){
+    for (let i in types){
+        if (types[i].__import_path__===undefined){
+            delete types[i];
+        }
+    }
+    return types;
+}
+
 class CPPGenerator{
     
     constructor(filename='js_result.cpp'){
         this._cpp = ""; //cpp code
         this.types = _getDefaultTypes(); //types of js variables
+        this.std_objects = _getStdObjects(Object.assign({},this.types));
+        this.functions_code = ""; //like this._cpp, but for functions
         this._modules = new Set(['<iostream>',`"${args.stdlib}/builtins.h"`]); //cpp includes
         this.options = defaultOptions; //options like formating
         this._filename = filename; //output filename
@@ -36,6 +47,8 @@ class CPPGenerator{
         //3 spaces for level 2, 6 for level 3
         const SPACE = ' ';
         const SPACES_PER_LEVEL = 3;
+        const lastChar = this.options.function_name==='' ? this._cpp[this._cpp.length-1]: 
+            this.types[this.options.function_name].code.slice(-1);
         if (lastChar!='\n' || this.options.locked || args.no_format) return '';
         return SPACE.repeat(SPACES_PER_LEVEL*(level-1));
     }
@@ -45,7 +58,7 @@ class CPPGenerator{
         const spaces = this._getSpacesByLevel(options.indentLevel);
         const result_code = `${spaces}${code};\n`
         if (options.function_name!==''){
-            this.functions[options.function_name].code+=result_code;
+            this.types[options.function_name].code+=result_code;
         }
         else {
             this._cpp += result_code;
@@ -58,12 +71,12 @@ class CPPGenerator{
         }
         
         else{
-            this.functions[this.options.function_name].code=this.functions[this.options.function_name].code.slice(0,-l);
+            this.types[this.options.function_name].code=this.types[this.options.function_name].code.slice(0,-l);
         }
     }
 
     _buildFunction(name){
-        const func = this.functions[name];
+        const func = this.types[name];
         cpp_generator.options.function_name=name;
         incrementIndent();
         this.__parse_node__(func.node.body);
@@ -72,6 +85,7 @@ class CPPGenerator{
         for (let arg in func.args){
            code+=`${func.args[arg]} ${arg}, `; 
         }
+        //if it's necessary, delete last `, `
         if (Object.keys(func.args).length!==0){
             code=code.slice(0,code.length-2);
         } 
@@ -87,7 +101,7 @@ class CPPGenerator{
         const spaces = this._getSpacesByLevel(options.indentLevel);
         const result_code = `${spaces}${code}`;
         if (options.function_name!==''){
-            this.functions[options.function_name].code+=result_code;
+            this.types[options.function_name].code+=result_code;
         }
         else {
             this._cpp += result_code;

@@ -1,8 +1,16 @@
 {
     "console":{
-        "log":"void",
+        "__import_path__":"console.h",
+        "log":{
+            "disable_checking":true,
+            "args":{},
+            "ret":"void"
+        },
         "warn":"void",
         "error":"void",
-        "clear":"void"
+        "clear":{
+            "args":{},
+            "ret":"void"
+        }
     }
 } 
