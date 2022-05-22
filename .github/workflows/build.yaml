@@ -48,9 +48,11 @@ jobs:
        diff output/logs/$file tests/correct/expected/$txt_ext
        if [[ $? -gt 0 ]]
        then
+       echo "Test $i was failed("
        exit 1
-       fi
+       else
        echo "Test $i was passed!"
+       fi
        i=$(($i+1)); 
        done
       shell: bash
@@ -60,15 +62,20 @@ jobs:
       with:
          name: full
          path: output
+         if-no-files-found: error
        
     - name: Upload artifact exe
+      if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
       with:
          name: exe
          path: output/*.exe
+         if-no-files-found: error
        
     - name: Upload artifact elf
+      if: runner.os == 'Linux'
       uses: actions/upload-artifact@v3
       with:
          name: elf
          path: output/*.elf
+         if-no-files-found: error
