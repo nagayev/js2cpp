@@ -1,6 +1,6 @@
 echo "Creating output"
 mkdir -p output/logs
-cp -r src/stdlib output/stdlib
+cp -r src/ output/src
 
 echo "Compiling correct tests..."
 
@@ -10,7 +10,7 @@ for file in $(ls tests/correct)
 do
 cpp_ext="${file%.js}.cpp"
 echo Test $i/$all_tests
-node js2cpp.js tests/correct/$file  --output output/$cpp_ext --stdlib ./stdlib
+node js2cpp.js tests/correct/$file  --output output/$cpp_ext
 echo "Test $i was passed!"
 i=$(($i+1));
 done
@@ -23,7 +23,7 @@ for file in $(ls tests/incorrect)
 do
 echo Test $i/$all_tests
 #don't produce js_result.cpp and don't show errors
-node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp --stdlib ./stdlib > /dev/null
+node js2cpp.js tests/incorrect/$file  --output output/js_result.cpp > /dev/null
 # panic if incorrect test was compiled
 if [[ $? -eq 0 ]]
 then
@@ -45,12 +45,12 @@ do
 binary_ext="${file%.cpp}.${bin_type}"
 g++ output/$file -o output/$binary_ext
 # panic if something went wrong
-if [[ $? -gt 0 ]]
-then
-  exit 1
-fi
+#if [[ $? -gt 0 ]]
+#then
+#  exit 1
+#fi
 done
 
-echo "Deleting stdlib folder"
-rm -rf output/stdlib #exclude stdlib from output
+echo "Deleting src folder"
+rm -rf output/src #exclude src from output
  
