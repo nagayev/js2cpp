@@ -475,6 +475,8 @@ function parse_node(node){
                 break;
             }
             throw new Error('We don\'t support this UnaryExpression');
+        case 'WithStatement':
+            throw new Error('You coudn\'t use `with` with js2cpp');
         case 'MemberExpression':
             //handle case like arr[j] or Math.E
             let open,close;
