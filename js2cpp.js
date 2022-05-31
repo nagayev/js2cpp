@@ -37,6 +37,10 @@ function getExpressionType(node,anotherNode){
     let js_type = node.type;
     switch (js_type){
         case 'UnaryExpression':
+            if (node.operator=='typeof'){
+                ctype = "JS_string";
+                break;
+            }
         case 'NumericLiteral':
             ctype="JS_int";
             let value = node.value;
@@ -112,17 +116,20 @@ function getExpressionType(node,anotherNode){
             const arithOperators = ['+','-','*','/','**'];
             //const logicOperators = ['|','&','<<','>>','>>>'];
             //TODO: hack
-            const isNumberType = (type) => type === 'int64_t' || type=='float';
+            /*const isNumberType = (type) => type === 'JS_int' || type=='JS_float';
             if (!isNumberType(leftType) || !isNumberType(rightType)) {
                 JS_type_assert(false,`You can apply binary operation ${node.operator} only to numbers`);
-            }
+            }*/
             if (comparasionOperators.includes(node.operator)){
-                ctype = "bool";
+                ctype = "JS_boolean";
             }
             else if (arithOperators.includes(node.operator)){
                 JS_assert(leftType===rightType,"Invalid operator usage: both arguments should have the same type");
                 //console.log("You coudn't use syntax like 2+\"abc\"");
                 ctype=leftType;
+            }
+            else if (node.operator==='instanceof'){
+                ctype="JS_boolean";
             }
             else{
                 throw new Error('Unknown BinaryExpression');
@@ -460,6 +467,14 @@ function parse_node(node){
             JS_assert(node.label===null,"We don't support continue with label");
             cpp_generator.addCode('continue');
             break;
+        case 'UnaryExpression':
+            if (node.operator==='typeof'){
+                cpp_generator.addRaw('JS_typeof(');
+                parse_node(node.argument);
+                cpp_generator.addRaw(')');
+                break;
+            }
+            throw new Error('We don\'t support this UnaryExpression');
         case 'MemberExpression':
             //handle case like arr[j] or Math.E
             let open,close;
