@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     js2cpp
+ * LICENSE:     MIT
+ * PROGRAMMERS:
+ *             Marat Nagayev (nagaevmt@yandex.ru)
+*/
+
 function enableColorfulDebug(){
     require('./src/color');
 }
