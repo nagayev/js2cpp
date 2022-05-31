@@ -1,4 +1,18 @@
 #pragma once
+
+//201402L
+#if __cplusplus < 201103L
+    #error You are using too old toolchain
+#endif
+
+//Check OS
+//We support Windows, Linux, MacOS and FreeBSD
+#ifndef _WIN32
+    #if !defined(__linux__) && !defined(__APPLE__) && !defined(__FreeBSD__)
+        #error "Unknown OS"
+    #endif
+#endif
+
 #include <cmath>
 #include <string>
 #include <stdexcept>
