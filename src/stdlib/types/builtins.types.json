@@ -1,7 +1,22 @@
 {
-    "parseFloat":"float",
-    "parseInt":"int64_t",
-    "eval":"int64_t",
-    "isNaN":"bool",
-    "isFinite":"bool"
+    "parseFloat":{
+        "args":{"x":"any"},
+        "ret":"JS_float"
+    },
+    "parseInt":{
+        "args":{"x":"any"},
+        "ret":"JS_int"
+    },
+    "eval":{
+        "args":{"x":"any"},
+        "ret":"JS_int"
+    },
+    "isNaN":{
+        "args":{"x":"any"},
+        "ret":"JS_bool"
+    },
+    "isFinite":{
+        "args":{"x":"any"},
+        "ret":"JS_bool"
+    }
 } 
