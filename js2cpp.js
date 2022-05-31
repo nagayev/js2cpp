@@ -31,22 +31,22 @@ function getExpressionType(node,anotherNode){
     switch (js_type){
         case 'UnaryExpression':
         case 'NumericLiteral':
-            ctype="int64_t";
+            ctype="JS_int";
             let value = node.value;
             //If it's unary expression (something like -2)
             if (value===undefined && node.operator){
                 value = node.argument.value;
             }
-            if (value!=parseInt(value)) ctype="float";
+            if (value!=parseInt(value)) ctype="JS_float";
             break;
         case 'BooleanLiteral':
-            ctype="bool";
+            ctype="JS_boolean";
             break;
         case 'StringLiteral':
-            ctype="string";
+            ctype="JS_string";
             break;
         case 'TemplateLiteral':
-            ctype="string";
+            ctype="JS_string";
             break;
         case 'ArrayExpression':
             const elements = node.elements;
