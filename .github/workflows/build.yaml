@@ -18,44 +18,10 @@ jobs:
       run: npm install
 
     - name: 'Compiling'
-      run: ./tests/compile.sh
-      shell: bash
+      run: python3 ./tests/build.py
 
     - name: 'Running'
-      run: |
-       bin_type="exe"
-       if [[ $(uname) -eq "Linux" ]] 
-       then
-       bin_type="elf"
-       fi
-       echo "bin_type is $bin_type"
-       for file in $(ls output/ | grep $bin_type)
-       do
-       log_ext="logs/${file%.$bin_type}.log"
-       output/$file>output/$log_ext
-       echo "Log for $file saved as $log_ext"
-       done
-      shell: bash
-
-    - name: 'Check results'
-      run: | 
-       i=1
-       all_tests=$(ls output/logs | wc -l)
-       for file in $(ls output/logs)
-       do
-       txt_ext="${file%.log}.txt"
-       echo Test $i/$all_tests
-       diff output/logs/$file tests/correct/expected/$txt_ext
-       if [[ $? -gt 0 ]]
-       then
-       echo "Test $i was failed("
-       exit 1
-       else
-       echo "Test $i was passed!"
-       fi
-       i=$(($i+1)); 
-       done
-      shell: bash
+      run: python3 ./tests/run.py
     
     - name: Upload artifact full
       uses: actions/upload-artifact@v3

@@ -11,6 +11,14 @@
         "args":{"x":"any"},
         "ret":"JS_int"
     },
+    "_assert":{
+        "args":{"x":"JS_boolean"},
+        "ret":"JS_void"
+    },
+    "_assertEqual":{
+        "args":{"x":"any","y":"any"},
+        "ret":"JS_void"
+    },
     "isNaN":{
         "args":{"x":"any"},
         "ret":"JS_bool"

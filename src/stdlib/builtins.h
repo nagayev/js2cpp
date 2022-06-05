@@ -17,6 +17,7 @@
 #include <string>
 #include <stdexcept>
 #include "types.h"
+#include <cassert>
 #define NaN NAN
 
 //Error, EvalError, InternalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError
@@ -113,6 +114,16 @@ JS_int eval(T s){
     throw std::runtime_error("You coudn't use eval"); 
     return 1;
 }
+
+JS_void _assert(JS_boolean a){
+    assert(a);
+}
+
+template<typename T1, typename T2>
+JS_void _assertEqual(T1 a,T2 b){
+    assert(a==b);
+}
+
 template<typename T>
 JS_string JS_typeof(T s){
     return WindowCls::__js_typeof__(s);
