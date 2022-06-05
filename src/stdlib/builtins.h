@@ -61,6 +61,27 @@ struct WindowCls{
         if (s=="" || s=="false") return false;
         return true;
     }
+    //TODO: add undefined and symbol
+    static JS_string __js_typeof__(JS_int s){
+        return "number";
+    }
+    static JS_string __js_typeof__(JS_float n){
+        return "number";
+    }
+    static JS_string __js_typeof__(JS_boolean b){
+        return "boolean";
+    }
+    static JS_string __js_typeof__(JS_string s){
+        return "string";
+    }
+    template <typename T1,typename ...T2>
+    static JS_string __js_typeof__(T1 (*g)(T2... rest)){
+        return "function";
+    }
+    template<typename T>
+    static JS_string __js_typeof__(T s){
+        return "object";
+    }
 };
 
 JS_int parseInt(JS_string s){
@@ -91,6 +112,10 @@ template<typename T>
 JS_int eval(T s){
     throw std::runtime_error("You coudn't use eval"); 
     return 1;
+}
+template<typename T>
+JS_string JS_typeof(T s){
+    return WindowCls::__js_typeof__(s);
 }
  
 WindowCls window;
