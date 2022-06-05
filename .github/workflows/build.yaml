@@ -3,19 +3,28 @@ on:
   push:
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       name: 'setup node'
       with:
         node-version: '14.x'
-
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x86
+        
     - name: 'Installing deps'
       run: npm install
+
+    - name: 'Preparing env'
+      run: |
+       echo "Creating folder output..."
+       mkdir -p output/logs
+       echo "Copy src to output/src"
+       cp -r src/ output/src
+      shell: bash
 
     - name: 'Compiling'
       run: python3 ./tests/build.py
@@ -31,7 +40,6 @@ jobs:
          if-no-files-found: error
        
     - name: Upload artifact exe
-      if: runner.os == 'Windows'
       uses: actions/upload-artifact@v3
       with:
          name: exe
@@ -39,7 +47,6 @@ jobs:
          if-no-files-found: error
        
     - name: Upload artifact elf
-      if: runner.os == 'Linux'
       uses: actions/upload-artifact@v3
       with:
          name: elf
