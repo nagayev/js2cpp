@@ -1,6 +1,6 @@
 {
     "Math":{
-        "__import_path__":"math.h",
+        "__import_path__":"objects/math.h",
         "E":"JS_float",
         "PI":"JS_float",
         "LN10":"JS_float",

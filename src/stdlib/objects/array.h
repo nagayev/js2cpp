@@ -1,4 +1,7 @@
 #pragma once
+//#include "../types.h"
+#include "../builtins.h"
+
 #include <vector>
 #include <stdexcept>
 
@@ -75,11 +78,21 @@ class JS_Array{
         }
         return false;
     }
-    /*string toString(){
-        //1,2,3
-        string str = "";
-        for(T e:data) str+=(to_string(e)+',');
-        return str;
-    }*/
+    
+    JS_string __to_string__(){
+        printf("using array.h\n");
+        string s = "";
+        if (data.size()==0){
+            return "";
+        }
+        for (int i=0;i<data.size(); i++){
+            T e = data[i];
+            s+=to_string(e); //inner builtin function
+            s.push_back(',');
+        }
+        s.pop_back();
+        return s;
+    }
+    
 };
  

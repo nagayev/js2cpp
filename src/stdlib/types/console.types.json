@@ -1,6 +1,6 @@
 {
     "console":{
-        "__import_path__":"console.h",
+        "__import_path__":"objects/console.h",
         "log":{
             "disable_checking":true,
             "args":{},

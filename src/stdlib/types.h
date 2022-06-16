@@ -3,7 +3,12 @@
 
 #include <string>
 #include <map>
-#include "array.h"
+
+#define JS_builtin_func
+//Class scopes
+
+#define JS_public public
+#define JS_private public
 
 //Primitives
 
@@ -15,6 +20,7 @@ typedef std::string JS_string;
 
 //Complex types
 
+#define JS_BigInt BigInt
 #define JS_array JS_Array
 //TODO:
 #define JS_object std::map

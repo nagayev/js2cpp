@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include "types.h"
 #include <cassert>
+
 #define NaN NAN
 
 //Error, EvalError, InternalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError
@@ -42,27 +43,19 @@ struct WindowCls{
     JS_string __to_string__(JS_string s){
         return s;
     }
+    
     template<typename T>
-    JS_string __to_string__(JS_array<T> arr){
-        string s = "";
-        if (arr.length==0){
-            return "";
-        }
-        for (int i=0;i<arr.length; i++){
-            T e = arr[i];
-            s+=this->__to_string__(e);
-            s.push_back(',');
-        }
-        s.pop_back();
-        return s;
+    JS_string __to_string__(T something){
+        return something.__to_string__();
     }
+    
     template<typename T>
     JS_boolean __to_boolean__(T something){
         JS_string s = this->__to_string__(something);
         if (s=="" || s=="false") return false;
         return true;
     }
-    //TODO: add undefined and symbol
+    //TODO: add undefined, bigint and symbol
     static JS_string __js_typeof__(JS_int s){
         return "number";
     }
@@ -75,6 +68,9 @@ struct WindowCls{
     static JS_string __js_typeof__(JS_string s){
         return "string";
     }
+    /*static JS_string __js_typeof__(JS_BigInt bi){
+        return "bigint";
+    }*/
     template <typename T1,typename ...T2>
     static JS_string __js_typeof__(T1 (*g)(T2... rest)){
         return "function";
@@ -122,6 +118,11 @@ JS_void _assert(JS_boolean a){
 template<typename T1, typename T2>
 JS_void _assertEqual(T1 a,T2 b){
     assert(a==b);
+}
+
+template <typename T>
+JS_builtin_func JS_string to_string(T s){
+    return WindowCls::__to_string__(s);
 }
 
 template<typename T>

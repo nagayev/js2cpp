@@ -73,7 +73,7 @@ function getExpressionType(node,anotherNode){
             }
             JS_type_assert(elements.every(hasOneType),'array\'s elements must be not heterogeneous');
             ctype = `JS_Array<${getExpressionType(first_element)}>`;
-            cpp_generator.addImport(`"${args.stdlib}/array.h"`);
+            cpp_generator.addImport(`"${args.stdlib}/objects/array.h"`);
             break;
         case 'ObjectExpression':
             throw new Error('Unsopperted type: object!');
@@ -115,11 +115,6 @@ function getExpressionType(node,anotherNode){
             const comparasionOperators = ['>','<','>=','<=','!=','=='];
             const arithOperators = ['+','-','*','/','**'];
             //const logicOperators = ['|','&','<<','>>','>>>'];
-            //TODO: hack
-            /*const isNumberType = (type) => type === 'JS_int' || type=='JS_float';
-            if (!isNumberType(leftType) || !isNumberType(rightType)) {
-                JS_type_assert(false,`You can apply binary operation ${node.operator} only to numbers`);
-            }*/
             if (comparasionOperators.includes(node.operator)){
                 ctype = "JS_boolean";
             }
