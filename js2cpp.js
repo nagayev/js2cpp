@@ -53,6 +53,9 @@ function getExpressionType(node,anotherNode){
         case 'BooleanLiteral':
             ctype="JS_boolean";
             break;
+        case 'BigIntLiteral':
+            ctype = "JS_BigInt";
+            break;
         case 'StringLiteral':
             ctype="JS_string";
             break;
@@ -130,6 +133,8 @@ function getExpressionType(node,anotherNode){
                 throw new Error('Unknown BinaryExpression');
             }
             break;
+        case 'Identifier':
+            return getVariableType(node);
         default:
             throw new TypeError(`Unknown type ${js_type}`);
     }
@@ -190,6 +195,10 @@ function parse_node(node){
             break;
         case 'BooleanLiteral':
             cpp_generator.addRaw(`${node.value}`);
+            break;
+        case 'BigIntLiteral':
+            cpp_generator.addImport(`"${args.stdlib}/objects/bigint.h"`);
+            cpp_generator.addRaw(`BigInt(${node.value})`);
             break;
         case 'TemplateLiteral':
             cpp_generator.addImport(`"${args.stdlib}/string_format.h"`);
