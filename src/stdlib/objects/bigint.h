@@ -1,4 +1,5 @@
 #pragma once
+#include "../error_names.h"
 #include "../types.h"
 #include <cmath>
 #include <gmp.h>
@@ -14,8 +15,7 @@ public:
         mpz_init(__value__);
         int result = mpz_set_str(__value__,s.c_str(),10);
         if (result < 0 ){
-            //we should raise Uncaught SyntaxError: invalid BigInt syntax
-            printf("bigint error: string s isn't a correct number\n");
+            throw SyntaxError("invalid BigInt syntax");
         }
     }
     BigInt(JS_int i){
@@ -81,23 +81,23 @@ public:
     
     BigInt operator & (BigInt c){
         BigInt new_value;
-        mpz_and(new_value.__value__,__value__,c.__value__); //new_value.value=value+c.value
+        mpz_and(new_value.__value__,__value__,c.__value__);
         return new_value;
     }
     
     BigInt operator | (BigInt c){
         BigInt new_value;
-        mpz_ior(new_value.__value__,__value__,c.__value__); //new_value.value=value+c.value
+        mpz_ior(new_value.__value__,__value__,c.__value__);
         return new_value;
     }
     
     BigInt operator ^ (BigInt c){
         BigInt new_value;
-        mpz_xor(new_value.__value__,__value__,c.__value__); //new_value.value=value+c.value
+        mpz_xor(new_value.__value__,__value__,c.__value__);
         return new_value;
     }
     
     ~BigInt(){
-        //mpz_clear(value);
+        //NOTE: we shouldn't call mpz_clear(value)
     }
 };

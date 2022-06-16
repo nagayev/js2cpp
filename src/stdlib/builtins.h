@@ -13,15 +13,14 @@
     #endif
 #endif
 
+#include <cassert>
 #include <cmath>
 #include <string>
 #include <stdexcept>
+#include "error_names.h"
 #include "types.h"
-#include <cassert>
 
 #define NaN NAN
-
-//Error, EvalError, InternalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError
 
 using namespace std;
 
@@ -84,7 +83,7 @@ struct WindowCls{
 JS_int parseInt(JS_string s){
     int r = atoi(s.c_str());
     if (r==0 && s[0]!='0'){
-        return NAN; //FIXME:
+        return 0; //NAN; //FIXME:
     }
     return (JS_int)r;
 }
@@ -107,7 +106,7 @@ JS_boolean isFinite(JS_float x){
 
 template<typename T>
 JS_int eval(T s){
-    throw std::runtime_error("You coudn't use eval"); 
+    throw EvalError("You coudn't use eval");
     return 1;
 }
 
