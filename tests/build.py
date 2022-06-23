@@ -7,14 +7,24 @@ def fail_CI(test_number):
 
 print("Transcomping .js to .cpp...")
 
-files=glob('tests/correct/*.js')
+files=glob('tests/correct/**/*.js',recursive=True)
+incorrect=glob('tests/incorrect/*.js')
 assert len(files)>0
+assert len(incorrect)>0
 for file in files:
     #cpp_file must be like output/*.cpp
     cpp_file = file.replace('tests/correct/','output/')
     cpp_file = cpp_file.replace('js','cpp')
     system(f'node js2cpp {file} --output {cpp_file}')
-#TODO: implement  incorrect tests
+
+for i,file in enumerate(incorrect):
+    exit_code = system(f'node js2cpp {file}')
+    if exit_code==0:
+        print(f'Incorrect test {i+1} was failed')
+        fail_CI(i)
+    else:
+        print(f'Incorrect test {i+1} was passed')
+    
 print('Compiling .cpp files...')
 
 
