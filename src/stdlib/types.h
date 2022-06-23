@@ -18,9 +18,11 @@ typedef float JS_float;
 typedef bool JS_boolean;
 typedef std::string JS_string;
 
+#define JS_BigInt BigInt
+#define JS_Error Error&
+
 //Complex types
 
-#define JS_BigInt BigInt
 #define JS_array JS_Array
 //TODO:
 #define JS_object std::map
