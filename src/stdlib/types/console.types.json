@@ -6,8 +6,16 @@
             "args":{},
             "ret":"void"
         },
-        "warn":"void",
-        "error":"void",
+        "warn":{
+            "disable_checking":true,
+            "args":{},
+            "ret":"void"
+        },
+        "error":{
+            "disable_checking":true,
+            "args":{},
+            "ret":"void"
+        },
         "clear":{
             "args":{},
             "ret":"void"

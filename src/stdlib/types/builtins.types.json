@@ -23,6 +23,10 @@
         "args":{"x":"any"},
         "ret":"JS_bool"
     },
+    "input":{
+        "args":{"x":"JS_string"},
+        "ret":"JS_string"
+    },
     "isFinite":{
         "args":{"x":"any"},
         "ret":"JS_bool"

@@ -110,6 +110,12 @@ JS_int eval(T s){
     return 1;
 }
 
+JS_string input(JS_string message){
+    cout<<message;
+    std::string result;
+    getline(cin, result);
+    return result;
+}
 JS_void _assert(JS_boolean a){
     assert(a);
 }
