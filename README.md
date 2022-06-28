@@ -28,22 +28,27 @@ console.log(a);
 #include "src/stdlib/console.h"
 using namespace std;
 int main(){
-string a = "Hello world";
+JS_string a = "Hello world";
 console.log(a);
 return 0;
 }
 
 ```
 
+It can be compiled using C++ compiler like `g++` (for details see [this](https://github.com/nagayev/js2cpp/blob/master/docs/user.MD) page).
+
 ### Options
 
 -o --output Output name, default is js_result.cpp  
--s --stdlib Path to stdlib folder, default is stdlib  
---no-type-checks Don't check JavaScript types, default is false  
+-s --stdlib Path to stdlib folder, default is stdlib    
 --no-format Don't format output code, default is false   
 --sort-imports Enable sorting of C++ includes, default is false  
 
-It can be compiled using C++ compiler like `g++` (for details see [this](https://github.com/nagayev/js2cpp/blob/master/docs/user.MD) page). 
+#### Experimental options
+
+⚠️ Don't use these options unless you know what you are doing.
+
+--no-type-checks Don't check JavaScript types, default is false 
 
 ## Docs
 
