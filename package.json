@@ -4,8 +4,7 @@
   "description": "",
   "main": "js2cpp.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "update-test": "tests/update_test.sh"
+    "test": "tests/run-test.sh"
   },
   "keywords": [],
   "author": "Marat Nagayev",

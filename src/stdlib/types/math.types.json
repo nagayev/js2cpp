@@ -57,6 +57,10 @@
             "args":{"x":"JS_int|JS_float"},
             "ret":"JS_float"
         },
+        "pow":{
+            "args":{"x":"JS_int|JS_float","y":"JS_int|JS_float"},
+            "ret":"JS_float"
+        },
         "trunc":{
             "args":{"x":"JS_int|JS_float"},
             "ret":"JS_float"
