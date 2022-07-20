@@ -191,7 +191,7 @@ function parse_node(node){
             cpp_generator.addRaw(`${node.value}`);
             break;
         case 'StringLiteral':
-            cpp_generator.addRaw(`"${node.value}"`);
+            cpp_generator.addRaw(`"${node.value}"s`); //suffix `s` is used for std::string
             break;
         case 'BooleanLiteral':
             cpp_generator.addRaw(`${node.value}`);

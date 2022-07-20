@@ -1,17 +1,6 @@
 #pragma once
 
-//201402L
-#if __cplusplus < 201103L
-    #error You are using too old toolchain
-#endif
-
-//Check OS
-//We support Windows, Linux, MacOS and FreeBSD
-#ifndef _WIN32
-    #if !defined(__linux__) && !defined(__APPLE__) && !defined(__FreeBSD__)
-        #error "Unknown OS"
-    #endif
-#endif
+#include "compiler.h"
 
 #include <cassert>
 #include <cmath>
@@ -74,6 +63,7 @@ struct WindowCls{
     static JS_string __js_typeof__(T1 (*g)(T2... rest)){
         return "function";
     }
+    //typeof(null) is an object too
     template<typename T>
     static JS_string __js_typeof__(T s){
         return "object";
