@@ -2,16 +2,16 @@
     #error "You are using too old toolchain or don't pass -std=c++11"
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+    #define _deprecated __attribute__((deprecated))
+#elif defined(_MSC_VER)
+    #define _deprecated __declspec(deprecated)
+#else
+    #pragma message("WARNING: You need to implement _deprecated for this compiler",__FILE__)
+    #define _deprecated
+#endif
+
 #if __cplusplus < 201402L
-    #if defined(__GNUC__) || defined(__clang__)
-        #define deprecated __attribute__((deprecated))
-    #elif defined(_MSC_VER)
-        #define deprecated __declspec(deprecated)
-    #else
-        #pragma message("WARNING: You need to implement deprecated for this compiler",__FILE__)
-        #define deprecated
-    #endif
-    
     //NOTE: we coudn't transform this to macro suppress
     #if defined(__GNUC__)
         #pragma GCC diagnostic push
@@ -25,8 +25,6 @@
     #if defined(__GNUC__)
         #pragma GCC diagnostic pop
     #endif
-#else
-    #define deprecated [[deprecated]]
 #endif
 
 //Check OS
