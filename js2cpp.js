@@ -6,7 +6,7 @@
 */
 
 function enableColorfulDebug(){
-    require('./src/color');
+    require('./src/debug');
 }
 
 enableColorfulDebug();
