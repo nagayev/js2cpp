@@ -260,8 +260,31 @@ function parse_node(node){
             parse_node(node.declarations[0].init);
             //FIXME: dirty hack
             if (!cpp_generator.options.HACKY_EXPR){
-                cpp_generator.addCode('');
+        case 'SwitchStatement':
+            cpp_generator.addRaw('switch(');
+            parse_node(node.discriminant);
+            cpp_generator.addRaw('){\n');
+            incrementIndent();
+            for (let case_ of node.cases){
+                console.log(case_);
+                const testExpr = case_.test;
+                if (testExpr !== null){
+                    cpp_generator.addRaw('case ');
+                    parse_node(testExpr);
+                }
+                else {
+                    cpp_generator.addRaw('default');
+                }    
+                
+                cpp_generator.addRaw(':\n');
+                incrementIndent();
+                for (let consequent of case_.consequent){
+                    parse_node(consequent);
+                }
+                decrementIndent();
             }
+            decrementIndent();
+            cpp_generator.addRaw('}\n');
             break;
         case 'FunctionDeclaration':
             //NOTE: we parse function's body when user calles function first time
