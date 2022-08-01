@@ -4,7 +4,9 @@ const defaultArgs = {
     stdlib:'src/stdlib',
     no_type_checks:false,
     no_format:false,
-    sort_imports:false
+    sort_imports:false,
+    include_comments:false,
+    debug:false
 };
 const parser = new ArgumentParser({});
 
@@ -17,6 +19,11 @@ parser.add_argument('--no_format', '--no-format', { help: `Don't format output c
 action:'store_true' });
 parser.add_argument('--sort_imports', '--sort-imports', { help: `Sort C++ imports, default is ${defaultArgs.sort_imports}`,
 action:'store_true' });
+parser.add_argument('--include_comments', '--include-comments', { help: `Include commentaries from js source, default is ${defaultArgs.include_comments}`,
+action:'store_true' });
+parser.add_argument('--debug', { help: `Debug ${defaultArgs.debug}`,
+action:'store_true' });
+
 
 if (process.argv.length<3){
     console.error("Invalid script usage!");

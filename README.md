@@ -43,6 +43,8 @@ It can be compiled using C++ compiler like `g++` (for details see [this](https:/
 -s --stdlib Path to stdlib folder, default is stdlib    
 --no-format Don't format output code, default is false   
 --sort-imports Enable sorting of C++ includes, default is false  
+--include-comments Include commentaries from JS code to C++, default is false  
+--debug Show some debug information during building, default is false  
 
 #### Experimental options
 

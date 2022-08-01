@@ -174,7 +174,7 @@ function getVariableType(node){
 //TODO: move parsing to several modules
 function parse_node(node){
     //parse // or /* 
-    if (node.leadingComments){
+    if (node.leadingComments && args.include_comments){
         let start, end;
         for(let commentary of node.leadingComments){
             start = "//";
@@ -561,6 +561,9 @@ function main_parse(){
 function main(){
     main_parse();
     console.log(`Compiled successfully!\nSee ${args.output}`);
+    if (args.debug){
+        console.log(cpp_generator.types);
+    }
     cpp_generator.save();
 }
 main();
